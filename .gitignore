@@ -1,0 +1,7 @@
+# python virtualenv folders
+bin/
+include/
+lib/
+local/
+share/
+*.pyc
