@@ -1,0 +1,39 @@
+# geonetwork-update-scripts
+
+Scripts for bulk updates of geonetwork based on supplied csv files. Currently includes the following update options:
+
+* Update URL
+
+## INSTALLATION
+
+**Requires Python 2.7**
+
+```
+  git clone https://github.com/AstunTechnology/geonetwork-update-scripts
+  cd geonetwork-update-scripts
+  python virtualenv .
+  source bin/activate
+  pip install -r requirements.txt
+  ```
+
+## GENERAL USAGE
+
+`python geonetwork_update.py --help`
+
+### URL Update
+
+`python geonetwork_update.py --url={root geonetwork URL eg http://localhost:8080} --username={admin username} urlupdate`
+* Add password for `{admin username}` at prompt
+* Add `filename.csv` at prompt
+
+* Runs `url-host-relocator.xsl` via `/geonetwork/srv/api/0.1/processes/`. This file must be present in the `process` folder for the schema of the records you are trying to update.
+* Requires CSV file in same format as `updateurl.csv.sample`, eg:
+  * UUID: uuid of the record
+  * OLDURL: the URL you are wish to update
+  * NEWURL: the URL you wish to update to
+  * PROTOCOL: (optional) protocol for the transfer option- NOT YET IMPLEMENTED
+  * NAME: (optional) name for the transfer option- NOT YET IMPLEMENTED
+  * DESCRIPTION: (optional) description for the transfer option- NOT YET IMPLEMENTED
+
+
+
