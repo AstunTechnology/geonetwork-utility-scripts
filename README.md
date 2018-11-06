@@ -3,6 +3,9 @@
 Scripts for bulk updates of geonetwork based on supplied csv files. Currently includes the following update options:
 
 * Update URL
+* Update Sharing Permissions
+
+CAUTION: Work in progress, with absolutely no error handling yet!
 
 ## INSTALLATION
 
@@ -34,6 +37,20 @@ Scripts for bulk updates of geonetwork based on supplied csv files. Currently in
   * PROTOCOL: (optional) protocol for the transfer option- NOT YET IMPLEMENTED
   * NAME: (optional) name for the transfer option- NOT YET IMPLEMENTED
   * DESCRIPTION: (optional) description for the transfer option- NOT YET IMPLEMENTED
+
+### Sharing Update (WIP)
+
+`python geonetwork_update.py --url={root geonetwork URL eg http://localhost:8080} --username={admin username} sharing`
+* Add password for `{admin username}` at prompt
+* Add `filename.csv` at prompt
+
+* Runs `geonetwork/srv/api/0.1/records/[uuid]\sharing` for each UUID in provided CSV
+* Requires CSV file in same format as `sharing.csv.sample`, eg:
+  * UUID: uuid of the record
+  * ALL: boolean setting for view operation for all visitors
+  * APHA: boolean setting for view operation for members of the APHA group
+  * DEFRA: boolean setting for view operation for members of the DEFRA group
+  * EA: boolean setting for view operation for members of the EA group
 
 
 
