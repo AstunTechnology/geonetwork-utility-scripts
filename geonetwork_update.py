@@ -3,6 +3,7 @@ import click
 import csv
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+import json
 
 
 @click.group()
@@ -16,7 +17,7 @@ def cli(ctx,url,username,password):
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-    	
+		
 	geonetwork_session = requests.Session()
 	geonetwork_session.auth = HTTPBasicAuth(username, password)
 	geonetwork_session.headers.update({"Accept" : "application/json"})
@@ -35,7 +36,8 @@ def cli(ctx,url,username,password):
 	ctx.obj = {
 		'session': geonetwork_session,
 		'username': username,
-		'password': password
+		'password': password,
+		'url': url
 	}
 
 @cli.command()
@@ -52,23 +54,55 @@ def urlupdate(ctx,csvfile):
 		for row in reader:
 			#click.echo(row)
 			params = (
-	    		('uuids', row['UUID']),
-	    		('index', 'true'),
-	    		('urlPrefix', row['OLDURL']),
-	    		('newUrlPrefix', row['NEWURL'])
+				('uuids', row['UUID']),
+				('index', 'true'),
+				('urlPrefix', row['OLDURL']),
+				('newUrlPrefix', row['NEWURL'])
 			)
 
 			session = ctx.obj['session']
 			session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
 			headers = session.headers
 			cookies = session.cookies
-			updateURL = session.post('https://34.240.132.21/geonetwork/srv/api/0.1/processes/url-host-relocator', 
+			geonetworkUpdateURL = url + 'geonetwork/srv/api/0.1/processes/url-host-relocator'
+			updateURL = session.post(geonetworkUpdateURL, 
 				headers=headers, 
 				params=params, 
 				verify=False
 				)
 			click.echo(updateURL.text)
 
+@cli.command()
+@click.option('--csvfile',prompt=True, help='CSV file')
+@click.pass_context
+def sharing(ctx,csvfile):
+
+	# disabling https warnings while testing
+	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+	clcik.echo(url)
+
+	with open(csvfile, 'rb') as csvfile:
+		reader = csv.DictReader(csvfile)
+		for row in reader:
+			uuid = row['UUID']
+			public = row['ALL']
+			apha =  row['APHA']
+			defra = row['DEFRA']
+			ea = row['EA']
+
+			sharingSettings = {"clear": 'true', "privileges": [{"group": 130, "operations": {"view": apha, } }, {"group": 132, "operations": {"view": defra, } }, {"group": 128, "operations": {"view": ea, } } ] }
+			session = ctx.obj['session']
+			session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
+			headers = session.headers
+			cookies = session.cookies
+			geonetworkSharingURL = url + 'geonetwork/srv/api/0.1/records/' + uuid + '/sharing'
+			sharingURL = session.post(geonetworkSharingURL, 
+				headers=headers, 
+				verify=False,
+				data = json.dumps(sharingSettings)
+				)
+			click.echo(sharingURL.text)
+
 if __name__ == '__main__':
-    cli()
+	cli()
 
