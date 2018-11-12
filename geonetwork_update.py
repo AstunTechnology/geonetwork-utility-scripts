@@ -4,7 +4,7 @@ import csv
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import json
-
+import pandas as pd
 
 @click.group()
 @click.option('--url', prompt=True, help='Geonetwork URL')
@@ -61,10 +61,11 @@ def urlupdate(ctx,csvfile):
 			)
 
 			session = ctx.obj['session']
+			url = ctx.obj['url']
 			session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
 			headers = session.headers
 			cookies = session.cookies
-			geonetworkUpdateURL = url + 'geonetwork/srv/api/0.1/processes/url-host-relocator'
+			geonetworkUpdateURL = url + '/geonetwork/srv/api/0.1/processes/url-host-relocator'
 			updateURL = session.post(geonetworkUpdateURL, 
 				headers=headers, 
 				params=params, 
@@ -79,29 +80,59 @@ def sharing(ctx,csvfile):
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-	clcik.echo(url)
+	url = ctx.obj['url']
 
-	with open(csvfile, 'rb') as csvfile:
-		reader = csv.DictReader(csvfile)
-		for row in reader:
-			uuid = row['UUID']
-			public = row['ALL']
-			apha =  row['APHA']
-			defra = row['DEFRA']
-			ea = row['EA']
+	
 
-			sharingSettings = {"clear": 'true', "privileges": [{"group": 130, "operations": {"view": apha, } }, {"group": 132, "operations": {"view": defra, } }, {"group": 128, "operations": {"view": ea, } } ] }
-			session = ctx.obj['session']
-			session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
-			headers = session.headers
-			cookies = session.cookies
-			geonetworkSharingURL = url + 'geonetwork/srv/api/0.1/records/' + uuid + '/sharing'
-			sharingURL = session.post(geonetworkSharingURL, 
-				headers=headers, 
-				verify=False,
-				data = json.dumps(sharingSettings)
-				)
-			click.echo(sharingURL.text)
+	df = pd.read_csv(csvfile)
+	uuidlist = []
+	for index, row in df.iterrows():
+		# iterate through uuids and create list of distinct entries
+		if row["UUID"] not in uuidlist: 
+			uuidlist.append(row["UUID"])
+	
+	for u in uuidlist:
+		# build sharingurl from uuid
+		geonetworkSharingURL = url + '/geonetwork/srv/api/0.1/records/' + u + '/sharing'
+		#click.echo(geonetworkSharingURL)
+
+		# build dictionary of group operations for groups with this uuid, 
+		# where key is operation column header and value is cell value
+		privlist = []
+		sf = df.loc[df['UUID'] == u]
+		for index, row in sf.iterrows():
+			sharingdict = {}
+			sharingdict.update({"group":row["GROUP"],
+				"operations":
+					{"view":row["VIEW"],
+					"download":row["DOWNLOAD"],
+					"dynamic":row["DYNAMIC"],
+					"featured": row["FEATURED"],
+					"notify":row["NOTIFY"],
+					"editing":row["EDITING"]
+					}
+				})
+
+			# create a list collection of all the dictionary entries for that UUID
+			privlist.append(sharingdict)
+
+		# add the list to the dictionary of operation options
+		privdict = {}
+		privdict.update({"clear":"true","privileges":privlist})
+	
+		#click.echo(json.dumps(privdict))
+
+		session = ctx.obj['session']
+		session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
+		headers = session.headers
+		cookies = session.cookies
+		sharingURL = session.put(geonetworkSharingURL, 
+			headers=headers, 
+			verify=False,
+			json = json.dumps(privdict)
+			)
+		click.echo(sharingURL.text)
+
 
 if __name__ == '__main__':
 	cli()
