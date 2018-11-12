@@ -1,0 +1,14 @@
+{
+	"clear":true,
+	"privileges":[
+		{"group":-1,"operations":{"view":false,"download":false,"dynamic":false,"featured":false,"notify":false,"editing":false}},
+		{"group":0,"operations":{"view":false,"download":false,"dynamic":false,"featured":false,"notify":false,"editing":false}},
+		{"group":1,"operations":{"view":true,"download":true,"dynamic":true,"featured":true,"notify":true,"editing":true}},
+		{"group":128,"operations":{"view":true,"download":false,"dynamic":false,"featured":false,"notify":false,"editing":false}},
+		{"group":139,"operations":{"view":true,"download":false,"dynamic":false,"featured":false,"notify":false,"editing":false}},
+		{"group":140,"operations":{"view":true,"download":false,"dynamic":false,"featured":false,"notify":false,"editing":false}},
+		{"group":141,"operations":{"view":false,"download":false,"dynamic":false,"featured":false,"notify":false,"editing":false}},
+		{"group":142,"operations":{"view":false,"download":false,"dynamic":false,"featured":false,"notify":false,"editing":false}},
+		{"group":143,"operations":{"view":false,"download":false,"dynamic":false,"featured":false,"notify":false,"editing":false}}
+	]
+}
