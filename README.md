@@ -44,13 +44,16 @@ CAUTION: Work in progress, with absolutely no error handling yet!
 * Add password for `{admin username}` at prompt
 * Add `filename.csv` at prompt
 
-* Runs `geonetwork/srv/api/0.1/records/[uuid]\sharing` for each UUID in provided CSV
-* Requires CSV file in same format as `sharing.csv.sample`, eg:
+* Runs `geonetwork/srv/api/0.1/records/[uuid]\sharing` for each UUID and GROUP in provided CSV
+* Requires CSV file in same format as `sharing.csv.sample`, eg a row for each UUID and GROUP combination:
   * UUID: uuid of the record
-  * ALL: boolean setting for view operation for all visitors
-  * APHA: boolean setting for view operation for members of the APHA group
-  * DEFRA: boolean setting for view operation for members of the DEFRA group
-  * EA: boolean setting for view operation for members of the EA group
+  * GROUP: group IP (at present, will be extended to use name),
+  * VIEW: true/false for this operation for this group,
+  * DOWNLOAD: true/false for this operation for this group,
+  * DYNAMIC: true/false for this operation for this group,
+  * FEATURED: true/false for this operation for this group,
+  * NOTIFY: true/false for this operation for this group,
+  * EDITING: true/false for this operation for this group
 
 
 
