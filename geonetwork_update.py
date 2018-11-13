@@ -11,7 +11,6 @@ import pandas as pd
 @click.option('--username', prompt=True, default='admin', help='Geonetwork username')
 @click.password_option('--password', prompt=True, confirmation_prompt=False, hide_input=True, help='Geonetwork password')
 
-
 @click.pass_context
 def cli(ctx,url,username,password):
 
@@ -40,6 +39,7 @@ def cli(ctx,url,username,password):
 		'url': url
 	}
 
+
 @cli.command()
 @click.option('--csvfile',prompt=True, help='CSV file')
 @click.pass_context
@@ -47,7 +47,6 @@ def urlupdate(ctx,csvfile):
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
 
 	with open(csvfile, 'rb') as csvfile:
 		reader = csv.DictReader(csvfile)
@@ -73,6 +72,7 @@ def urlupdate(ctx,csvfile):
 				)
 			click.echo(updateURL.text)
 
+
 @cli.command()
 @click.option('--csvfile',prompt=True, help='CSV file')
 @click.pass_context
@@ -82,7 +82,16 @@ def sharing(ctx,csvfile):
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 	url = ctx.obj['url']
 
-	
+	session = ctx.obj['session']
+	url = ctx.obj['url']
+	session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
+	headers = session.headers
+	cookies = session.cookies
+	groupurl = url + '/geonetwork/srv/api/0.1/groups?withReservedGroup=true'
+	groupresponse = session.get(groupurl,
+		verify=False
+		)
+	groupdict = {g["name"]: g["id"] for g in json.loads(groupresponse.text)}
 
 	df = pd.read_csv(csvfile)
 	uuidlist = []
@@ -102,7 +111,8 @@ def sharing(ctx,csvfile):
 		sf = df.loc[df['UUID'] == u]
 		for index, row in sf.iterrows():
 			sharingdict = {}
-			sharingdict.update({"group":row["GROUP"],
+			groupID = groupdict[row["GROUP"]]
+			sharingdict.update({"group":groupID,
 				"operations":
 					{"view":row["VIEW"],
 					"download":row["DOWNLOAD"],
@@ -118,10 +128,9 @@ def sharing(ctx,csvfile):
 
 		# add the list to the dictionary of operation options
 		privdict = {}
-		privdict.update({"clear":"true","privileges":privlist})
+		privdict.update({"clear":True,"privileges":privlist})
 	
-		#click.echo(json.dumps(privdict))
-
+		# send privdict to api as json payload
 		session = ctx.obj['session']
 		session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
 		headers = session.headers
@@ -129,9 +138,9 @@ def sharing(ctx,csvfile):
 		sharingURL = session.put(geonetworkSharingURL, 
 			headers=headers, 
 			verify=False,
-			json = json.dumps(privdict)
+			json = privdict
 			)
-		click.echo(sharingURL.text)
+		click.echo(sharingURL.status_code)
 
 
 if __name__ == '__main__':

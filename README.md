@@ -47,7 +47,7 @@ CAUTION: Work in progress, with absolutely no error handling yet!
 * Runs `geonetwork/srv/api/0.1/records/[uuid]\sharing` for each UUID and GROUP in provided CSV
 * Requires CSV file in same format as `sharing.csv.sample`, eg a row for each UUID and GROUP combination:
   * UUID: uuid of the record
-  * GROUP: group IP (at present, will be extended to use name),
+  * GROUP: group name (must be full name and is case-sensitive),
   * VIEW: true/false for this operation for this group,
   * DOWNLOAD: true/false for this operation for this group,
   * DYNAMIC: true/false for this operation for this group,
