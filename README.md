@@ -25,7 +25,7 @@ CAUTION: Work in progress, with very minimal error handling!
 
 `python geonetwork_update.py --help`
 
-###urlupdate
+### urlupdate
 
 `python geonetwork_update.py --url={root geonetwork URL eg http://localhost:8080} --username={admin username} urlupdate`
 * Add password for `{admin username}` at prompt
@@ -40,7 +40,7 @@ CAUTION: Work in progress, with very minimal error handling!
   * NAME: (optional) name for the transfer option
   * DESCRIPTION: (optional) description for the transfer option
 
-###urladd
+### urladd
 `python geonetwork_update.py --url={root geonetwork URL eg http://localhost:8080} --username={admin username} urlupdate`
 * Add password for `{admin username}` at prompt
 * Add `filename.csv` at prompt
@@ -54,7 +54,7 @@ CAUTION: Work in progress, with very minimal error handling!
   * NAME: (mandatory) name for the new URL
   * DESCRIPTION: (mandatory) description for the new URL
 
-###urlremove
+### urlremove
 
 `python geonetwork_update.py --url={root geonetwork URL eg http://localhost:8080} --username={admin username} urlupdate`
 * Add password for `{admin username}` at prompt
