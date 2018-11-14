@@ -9,7 +9,7 @@ import pandas as pd
 @click.group()
 @click.option('--url', prompt=True, help='Geonetwork URL')
 @click.option('--username', prompt=True, default='admin', help='Geonetwork username')
-@click.password_option('--password', prompt=True, confirmation_prompt=False, hide_input=True, help='Geonetwork password')
+@click.password_option('--password', prompt=True, confirmation_prompt=True, hide_input=False, help='Geonetwork password')
 
 @click.pass_context
 def cli(ctx,url,username,password):
@@ -249,13 +249,12 @@ def sharing(ctx,csvfile):
 			verify=False,
 			json = privdict
 			)
-		# get at response for some error handling
-		response = json.loads(updateURL.text)
 
-		if sharingURL.status_code == 201:
+		# rudimentary error handling
+		if sharingURL.status_code == 204:
 			click.echo(click.style(row['UUID'] + ': done', fg='green'))
 		else:
-			click.echo(click.style(row['UUID'] + ': error \n' + updateURL.text, fg='red'))
+			click.echo(click.style(row['UUID'] + ': error \n' + sharingURL.text, fg='red'))
 
 
 if __name__ == '__main__':
