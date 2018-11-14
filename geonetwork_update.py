@@ -13,6 +13,7 @@ import pandas as pd
 
 @click.pass_context
 def cli(ctx,url,username,password):
+	"""Modules for updating metadata UUIDs based on values in a CSV, see samples for structure"""
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -44,6 +45,7 @@ def cli(ctx,url,username,password):
 @click.option('--csvfile',prompt=True, help='CSV file')
 @click.pass_context
 def urlupdate(ctx,csvfile):
+	"""Update oldURL and replace with newURL, passed from a CSV file"""
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -88,6 +90,7 @@ def urlupdate(ctx,csvfile):
 @click.option('--csvfile',prompt=True, help='CSV file')
 @click.pass_context
 def urladd(ctx,csvfile):
+	"""add newURL as a new transfer option, passed from CSV file"""
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -136,6 +139,7 @@ def urladd(ctx,csvfile):
 @click.option('--csvfile',prompt=True, help='CSV file')
 @click.pass_context
 def urlremove(ctx,csvfile):
+	"""remove oldURL as a transfer option, passed from CSV file"""
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -180,6 +184,8 @@ def urlremove(ctx,csvfile):
 @click.option('--csvfile',prompt=True, help='CSV file')
 @click.pass_context
 def sharing(ctx,csvfile):
+
+	"""update permissions on a record for each group in a CSV"""
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
