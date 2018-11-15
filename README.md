@@ -81,7 +81,7 @@ Outputs results to terminal and csv.
 * Add password for `{admin username}` at prompt
 * Add `filename.csv` at prompt
 
-* Runs `geonetwork/srv/api/0.1/records/[uuid]\sharing` for each UUID and GROUP in provided CSV
+* Runs `geonetwork/srv/api/0.1/records/[uuid]/sharing` for each UUID and GROUP in provided CSV
 * Requires CSV file in same format as `sharing.csv.sample`, eg a row for each UUID and GROUP combination:
   * UUID: uuid of the record
   * GROUP: group name (must be full name and is case-sensitive),
