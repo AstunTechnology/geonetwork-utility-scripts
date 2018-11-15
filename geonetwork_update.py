@@ -1,10 +1,10 @@
 import requests
 import click
-import csv
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import json
 import pandas as pd
+from collections import Counter
 
 @click.group()
 @click.option('--url', prompt=True, help='Geonetwork URL')
@@ -50,41 +50,56 @@ def urlupdate(ctx,csvfile):
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-	with open(csvfile, 'rb') as csvfile:
-		reader = csv.DictReader(csvfile)
-		for row in reader:
-			if row['OLDURL'] and row['NEWURL']:
-				#click.echo(row)
-				params = (
-					('uuids', row['UUID']),
-					('index', 'true'),
-					('urlPrefix', row['OLDURL']),
-					('newUrlPrefix', row['NEWURL'])
+	uuidlist = []
+	results = []
+
+	df = pd.read_csv(csvfile)
+	for index, row in df.iterrows():
+		uuidlist.append(row["UUID"])
+		rf = pd.DataFrame(uuidlist, columns=['UUID'])
+		if row['OLDURL'] and row['NEWURL']:
+			#click.echo(row)
+			params = (
+				('uuids', row['UUID']),
+				('index', 'true'),
+				('urlPrefix', row['OLDURL']),
+				('newUrlPrefix', row['NEWURL'])
+			)
+
+			session = ctx.obj['session']
+			url = ctx.obj['url']
+			session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
+			headers = session.headers
+			cookies = session.cookies
+			geonetworkUpdateURL = url + '/geonetwork/srv/api/0.1/processes/url-host-relocator'
+			updateURL = session.post(geonetworkUpdateURL, 
+				headers=headers, 
+				params=params, 
+				verify=False
 				)
+			
+			# get at response for some error handling
+			response = json.loads(updateURL.text)
 
-				session = ctx.obj['session']
-				url = ctx.obj['url']
-				session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
-				headers = session.headers
-				cookies = session.cookies
-				geonetworkUpdateURL = url + '/geonetwork/srv/api/0.1/processes/url-host-relocator'
-				updateURL = session.post(geonetworkUpdateURL, 
-					headers=headers, 
-					params=params, 
-					verify=False
-					)
-				
-				# get at response for some error handling
-				response = json.loads(updateURL.text)
-
-				if updateURL.status_code == 201 and response["numberOfNullRecords"] == 0 and not response["errors"]:
-					click.echo(click.style(row['UUID'] + ': done', fg='green'))
-				elif updateURL.status_code == 201 and response["numberOfNullRecords"] == 1:
-					click.echo(click.style(row['UUID'] + ': not found', fg='red'))
-				else:
-					click.echo(click.style(row['UUID'] + ': error \n' + updateURL.text, fg='red'))
+			if updateURL.status_code == 201 and response["numberOfNullRecords"] == 0 and not response["errors"]:
+				click.echo(click.style(row['UUID'] + ': done', fg='green'))
+				results.append('done')
+			elif updateURL.status_code == 201 and response["numberOfNullRecords"] == 1:
+				click.echo(click.style(row['UUID'] + ': not found', fg='red'))
+				results.append('not found')
 			else:
-				click.echo(click.style(row['UUID'] + ': skipped', fg='blue'))
+				click.echo(click.style(row['UUID'] + ': error \n' + updateURL.text, fg='red'))
+				results.append('error')
+		else:
+			click.echo(click.style(row['UUID'] + ': skipped', fg='blue'))
+			results.append('skipped')
+	counter = Counter(results)
+	click.echo('=============')
+	click.echo('RESULTS: see updateurlresults.csv for details')
+	for k,v in sorted(counter.iteritems()):
+		print k, v
+	rf.insert(1,'RESULT',results)
+	rf.to_csv('urlupdateresults.csv', index=False)
 
 @cli.command()
 @click.option('--csvfile',prompt=True, help='CSV file')
@@ -95,44 +110,59 @@ def urladd(ctx,csvfile):
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-	with open(csvfile, 'rb') as csvfile:
-		reader = csv.DictReader(csvfile)
-		for row in reader:
-			if not row['OLDURL'] and row['NEWURL']:
-				# build json payload
-				jsonpayload = json.dumps([{"value":"<gmd:onLine xmlns:gmd=\"http://www.isotc211.org/2005/gmd\"> \
-								<gmd:CI_OnlineResource> \
-								<gmd:linkage><gmd:URL>" + row['NEWURL'] + "</gmd:URL></gmd:linkage> \
-								<gmd:protocol><gco:CharacterString xmlns:gco=\"http://www.isotc211.org/2005/gco\">" + row['PROTOCOL'] + "</gco:CharacterString></gmd:protocol>  \
-								<gmd:name><gco:CharacterString xmlns:gco=\"http://www.isotc211.org/2005/gco\">" + row['NAME'] + "</gco:CharacterString></gmd:name>  \
-								<gmd:description><gco:CharacterString xmlns:gco=\"http://www.isotc211.org/2005/gco\">" + row['DESCRIPTION'] + "</gco:CharacterString></gmd:description>  \
-								</gmd:CI_OnlineResource> \
-								</gmd:onLine>",
-								"xpath": "/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:transferOptions/gmd:MD_DigitalTransferOptions/"}])
-				session = ctx.obj['session']
-				url = ctx.obj['url']
-				session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
-				headers = session.headers
-				cookies = session.cookies
-				headers.update({'Content-Type': 'application/json'})
-				geonetworkAddURL = url + '/geonetwork/srv/api/0.1/records/batchediting?uuids=' + row['UUID']
-				updateURL = session.put(geonetworkAddURL, 
-					headers=headers, 
-					data=jsonpayload, 
-					verify=False
-					)
+	uuidlist = []
+	results = []
 
-				# get at response for some error handling
-				response = json.loads(updateURL.text)
+	df = pd.read_csv(csvfile)
+	for index, row in df.iterrows():
+		uuidlist.append(row["UUID"])
+		rf = pd.DataFrame(uuidlist, columns=['UUID'])
+		if not row['OLDURL'] and row['NEWURL']:
+			# build json payload
+			jsonpayload = json.dumps([{"value":"<gmd:onLine xmlns:gmd=\"http://www.isotc211.org/2005/gmd\"> \
+							<gmd:CI_OnlineResource> \
+							<gmd:linkage><gmd:URL>" + row['NEWURL'] + "</gmd:URL></gmd:linkage> \
+							<gmd:protocol><gco:CharacterString xmlns:gco=\"http://www.isotc211.org/2005/gco\">" + row['PROTOCOL'] + "</gco:CharacterString></gmd:protocol>  \
+							<gmd:name><gco:CharacterString xmlns:gco=\"http://www.isotc211.org/2005/gco\">" + row['NAME'] + "</gco:CharacterString></gmd:name>  \
+							<gmd:description><gco:CharacterString xmlns:gco=\"http://www.isotc211.org/2005/gco\">" + row['DESCRIPTION'] + "</gco:CharacterString></gmd:description>  \
+							</gmd:CI_OnlineResource> \
+							</gmd:onLine>",
+							"xpath": "/gmd:MD_Metadata/gmd:distributionInfo/gmd:MD_Distribution/gmd:transferOptions/gmd:MD_DigitalTransferOptions/"}])
+			session = ctx.obj['session']
+			url = ctx.obj['url']
+			session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
+			headers = session.headers
+			cookies = session.cookies
+			headers.update({'Content-Type': 'application/json'})
+			geonetworkAddURL = url + '/geonetwork/srv/api/0.1/records/batchediting?uuids=' + row['UUID']
+			updateURL = session.put(geonetworkAddURL, 
+				headers=headers, 
+				data=jsonpayload, 
+				verify=False
+				)
 
-				if updateURL.status_code == 201 and response["numberOfNullRecords"] == 0 and not response["errors"]:
-					click.echo(click.style(row['UUID'] + ': done', fg='green'))
-				elif updateURL.status_code == 201 and response["numberOfNullRecords"] == 1:
-					click.echo(click.style(row['UUID'] + ': not found', fg='red'))
-				else:
-					click.echo(click.style(row['UUID'] + ': error \n' + updateURL.text, fg='red'))
+			# get at response for some error handling
+			response = json.loads(updateURL.text)
+
+			if updateURL.status_code == 201 and response["numberOfNullRecords"] == 0 and not response["errors"]:
+				click.echo(click.style(row['UUID'] + ': done', fg='green'))
+				results.append('done')
+			elif updateURL.status_code == 201 and response["numberOfNullRecords"] == 1:
+				click.echo(click.style(row['UUID'] + ': not found', fg='red'))
+				results.append('not found')
 			else:
-				click.echo(click.style(row['UUID'] + ': skipped', fg='blue'))
+				click.echo(click.style(row['UUID'] + ': error \n' + updateURL.text, fg='red'))
+				results.append('error')
+		else:
+			click.echo(click.style(row['UUID'] + ': skipped', fg='blue'))
+			results.append('skipped')
+	counter = Counter(results)
+	click.echo('=============')
+	click.echo('RESULTS: see updateaddresults.csv for details')
+	for k,v in sorted(counter.iteritems()):
+		print k, v
+	rf.insert(1,'RESULT',results)
+	rf.to_csv('urladdresults.csv', index=False)
 
 
 @cli.command()
@@ -144,41 +174,56 @@ def urlremove(ctx,csvfile):
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-	with open(csvfile, 'rb') as csvfile:
-		reader = csv.DictReader(csvfile)
-		for row in reader:
-			if row['OLDURL'] and not row['NEWURL']:
-				#click.echo(row)
-				params = (
-					('uuids', row['UUID']),
-					('index', 'true'),
-					('url', row['OLDURL']),
-					('name', row['NAME'])
+	uuidlist = []
+	results = []
+
+	df = pd.read_csv(csvfile)
+	for index, row in df.iterrows():
+		uuidlist.append(row["UUID"])
+		rf = pd.DataFrame(uuidlist, columns=['UUID'])
+		if row['OLDURL'] and not row['NEWURL']:
+			#click.echo(row)
+			params = (
+				('uuids', row['UUID']),
+				('index', 'true'),
+				('url', row['OLDURL']),
+				('name', row['NAME'])
+			)
+
+			session = ctx.obj['session']
+			url = ctx.obj['url']
+			session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
+			headers = session.headers
+			cookies = session.cookies
+			geonetworkUpdateURL = url + '/geonetwork/srv/api/0.1/processes/onlinesrc-remove'
+			updateURL = session.post(geonetworkUpdateURL, 
+				headers=headers, 
+				params=params, 
+				verify=False
 				)
+			
+			# get at response for some error handling
+			response = json.loads(updateURL.text)
 
-				session = ctx.obj['session']
-				url = ctx.obj['url']
-				session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
-				headers = session.headers
-				cookies = session.cookies
-				geonetworkUpdateURL = url + '/geonetwork/srv/api/0.1/processes/onlinesrc-remove'
-				updateURL = session.post(geonetworkUpdateURL, 
-					headers=headers, 
-					params=params, 
-					verify=False
-					)
-				
-				# get at response for some error handling
-				response = json.loads(updateURL.text)
-
-				if updateURL.status_code == 201 and response["numberOfNullRecords"] == 0 and not response["errors"]:
-					click.echo(click.style(row['UUID'] + ': done', fg='green'))
-				elif updateURL.status_code == 201 and response["numberOfNullRecords"] == 1:
-					click.echo(click.style(row['UUID'] + ': not found', fg='red'))
-				else:
-					click.echo(click.style(row['UUID'] + ': error \n' + updateURL.text, fg='red'))
+			if updateURL.status_code == 201 and response["numberOfNullRecords"] == 0 and not response["errors"]:
+				click.echo(click.style(row['UUID'] + ': done', fg='green'))
+				results.append('done')
+			elif updateURL.status_code == 201 and response["numberOfNullRecords"] == 1:
+				click.echo(click.style(row['UUID'] + ': not found', fg='red'))
+				results.append('not found')
 			else:
-				click.echo(click.style(row['UUID'] + ': skipped', fg='blue'))
+				click.echo(click.style(row['UUID'] + ': error \n' + updateURL.text, fg='red'))
+				results.append('error')
+		else:
+			click.echo(click.style(row['UUID'] + ': skipped', fg='blue'))
+			results.append('skipped')
+				counter = Counter(results)
+	click.echo('=============')
+	click.echo('RESULTS: see updateremoveresults.csv for details')
+	for k,v in sorted(counter.iteritems()):
+		print k, v
+	rf.insert(1,'RESULT',results)
+	rf.to_csv('urlremoveresults.csv', index=False)
 
 @cli.command()
 @click.option('--csvfile',prompt=True, help='CSV file')
@@ -196,6 +241,8 @@ def sharing(ctx,csvfile):
 	session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
 	headers = session.headers
 	cookies = session.cookies
+	
+	# get group ID from name and create dictionary of names and ids
 	groupurl = url + '/geonetwork/srv/api/0.1/groups?withReservedGroup=true'
 	groupresponse = session.get(groupurl,
 		verify=False
@@ -203,11 +250,15 @@ def sharing(ctx,csvfile):
 	groupdict = {g["name"]: g["id"] for g in json.loads(groupresponse.text)}
 
 	df = pd.read_csv(csvfile)
+	
 	uuidlist = []
+	results=[]
 	for index, row in df.iterrows():
-		# iterate through uuids and create list of distinct entries
+		# iterate through uuids and create list of distinct uuids. Also use
+		# this list later for a results csv
 		if row["UUID"] not in uuidlist: 
 			uuidlist.append(row["UUID"])
+			rf = pd.DataFrame(uuidlist, columns=['UUID'])
 	
 	for u in uuidlist:
 		# build sharingurl from uuid
@@ -216,28 +267,23 @@ def sharing(ctx,csvfile):
 
 		# build dictionary of group operations for groups with this uuid, 
 		# where key is operation column header and value is cell value
-		privlist = []
+		privlist = {}
 		sf = df.loc[df['UUID'] == u]
 		for index, row in sf.iterrows():
-			sharingdict = {}
-			groupID = groupdict[row["GROUP"]]
-			sharingdict.update({"group":groupID,
-				"operations":
-					{"view":row["VIEW"],
-					"download":row["DOWNLOAD"],
-					"dynamic":row["DYNAMIC"],
-					"featured": row["FEATURED"],
-					"notify":row["NOTIFY"],
-					"editing":row["EDITING"]
-					}
-				})
+			# print row
 
-			# create a list collection of all the dictionary entries for that UUID
-			privlist.append(sharingdict)
+			# Try and get an existing request object by it's UUID, if there isn't one
+			# create a new one and associate it with the UUID in the requests
+			sharing =privlist.get(row["UUID"], {"clear": True, "privileges": []})
+			privlist[row['UUID']] = sharing
 
-		# add the list to the dictionary of operation options
-		privdict = {}
-		privdict.update({"clear":True,"privileges":privlist})
+			# Create a new privilege object
+			privilege = {"group": groupdict[row["GROUP"]]}
+			privilege["operations"] = {k.lower(): v == 'TRUE' for (k, v) in row.items() if k not in ['UUID', 'GROUP']}
+
+			# Append our new privilege to the privileges list
+			sharing["privileges"].append(privilege)
+
 	
 		# send privdict to api as json payload
 		session = ctx.obj['session']
@@ -247,14 +293,23 @@ def sharing(ctx,csvfile):
 		sharingURL = session.put(geonetworkSharingURL, 
 			headers=headers, 
 			verify=False,
-			json = privdict
+			json = sharing
 			)
 
 		# rudimentary error handling
 		if sharingURL.status_code == 204:
 			click.echo(click.style(row['UUID'] + ': done', fg='green'))
+			results.append('done')
 		else:
 			click.echo(click.style(row['UUID'] + ': error \n' + sharingURL.text, fg='red'))
+			results.append('error')
+			counter = Counter(results)
+	click.echo('=============')
+	click.echo('RESULTS: see sharingresults.csv for details')
+	for k,v in sorted(counter.iteritems()):
+		print k, v
+	rf.insert(1,'RESULT',results)
+	rf.to_csv('sharingresults.csv', index=False)
 
 
 if __name__ == '__main__':
