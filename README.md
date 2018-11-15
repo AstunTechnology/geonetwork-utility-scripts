@@ -7,7 +7,9 @@ Scripts for bulk updates of geonetwork based on supplied csv files. Currently in
 * Add URL
 * Update Sharing Permissions
 
-CAUTION: Work in progress, with very minimal error handling!
+Outputs results to terminal and csv.
+
+**Note that the URL updating modules can work from the same CSV, and will skip records depending on whether both OLDURL and NEWURL are supplied, or just one.**
 
 ## INSTALLATION
 
@@ -39,6 +41,8 @@ CAUTION: Work in progress, with very minimal error handling!
   * PROTOCOL: (optional) protocol for the transfer option
   * NAME: (optional) name for the transfer option
   * DESCRIPTION: (optional) description for the transfer option
+* Outputs results to `urlupdateresults.csv`
+
 
 ### urladd
 `python geonetwork_update.py --url={root geonetwork URL eg http://localhost:8080} --username={admin username} urlupdate`
@@ -53,6 +57,7 @@ CAUTION: Work in progress, with very minimal error handling!
   * PROTOCOL: (mandatory) protocol for the new URL
   * NAME: (mandatory) name for the new URL
   * DESCRIPTION: (mandatory) description for the new URL
+* Outputs results to `urladdresults.csv`
 
 ### urlremove
 
@@ -68,6 +73,7 @@ CAUTION: Work in progress, with very minimal error handling!
   * PROTOCOL: (optional) protocol for the URL
   * NAME: (mandatory) name for the URL
   * DESCRIPTION: (optional) description for the URL
+* Outputs results to `urlremoveresults.csv`
 
 ### sharing
 
@@ -85,6 +91,7 @@ CAUTION: Work in progress, with very minimal error handling!
   * FEATURED: true/false for this operation for this group,
   * NOTIFY: true/false for this operation for this group,
   * EDITING: true/false for this operation for this group
+* Outputs results to `sharingresults.csv`
 
 
 

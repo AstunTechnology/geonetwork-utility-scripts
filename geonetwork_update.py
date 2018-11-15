@@ -217,7 +217,7 @@ def urlremove(ctx,csvfile):
 		else:
 			click.echo(click.style(row['UUID'] + ': skipped', fg='blue'))
 			results.append('skipped')
-				counter = Counter(results)
+	counter = Counter(results)
 	click.echo('=============')
 	click.echo('RESULTS: see updateremoveresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
@@ -303,7 +303,7 @@ def sharing(ctx,csvfile):
 		else:
 			click.echo(click.style(row['UUID'] + ': error \n' + sharingURL.text, fg='red'))
 			results.append('error')
-			counter = Counter(results)
+	counter = Counter(results)
 	click.echo('=============')
 	click.echo('RESULTS: see sharingresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
