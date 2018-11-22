@@ -57,7 +57,7 @@ def urlupdate(ctx,csvfile):
 	for index, row in df.iterrows():
 		uuidlist.append(row["UUID"])
 		rf = pd.DataFrame(uuidlist, columns=['UUID'])
-		if row['OLDURL'] and row['NEWURL']:
+		if pd.notnull(row['OLDURL']) and pd.notnull(row['NEWURL']):
 			#click.echo(row)
 			params = (
 				('uuids', row['UUID']),
@@ -120,7 +120,7 @@ def urladd(ctx,csvfile):
 	for index, row in df.iterrows():
 		uuidlist.append(row["UUID"])
 		rf = pd.DataFrame(uuidlist, columns=['UUID'])
-		if not row['OLDURL'] and row['NEWURL']:
+		if pd.isnull(row['OLDURL']) and pd.notnull(row['NEWURL']):
 			# build json payload
 			jsonpayload = json.dumps([{"value":"<gmd:onLine xmlns:gmd=\"http://www.isotc211.org/2005/gmd\"> \
 							<gmd:CI_OnlineResource> \
@@ -184,7 +184,7 @@ def urlremove(ctx,csvfile):
 	for index, row in df.iterrows():
 		uuidlist.append(row["UUID"])
 		rf = pd.DataFrame(uuidlist, columns=['UUID'])
-		if row['OLDURL'] and not row['NEWURL']:
+		if pd.notnull(row['OLDURL']) and pd.isnull(row['NEWURL']):
 			#click.echo(row)
 			params = (
 				('uuids', row['UUID']),
