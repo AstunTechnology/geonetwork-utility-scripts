@@ -63,6 +63,9 @@ def urlupdate(ctx,csvfile):
 				('uuids', row['UUID']),
 				('index', 'true'),
 				('urlPrefix', row['OLDURL']),
+				('newProtocol', row['PROTOCOL']),
+				('newName', row['NAME']),
+				('newDescription', row['DESCRIPTION']),
 				('newUrlPrefix', row['NEWURL'])
 			)
 
@@ -71,7 +74,7 @@ def urlupdate(ctx,csvfile):
 			session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
 			headers = session.headers
 			cookies = session.cookies
-			geonetworkUpdateURL = url + '/geonetwork/srv/api/0.1/processes/url-host-relocator'
+			geonetworkUpdateURL = url + '/geonetwork/srv/api/0.1/processes/extended-url-host-relocator'
 			updateURL = session.post(geonetworkUpdateURL, 
 				headers=headers, 
 				params=params, 
