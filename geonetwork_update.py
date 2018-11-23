@@ -268,26 +268,22 @@ def sharing(ctx,csvfile):
 		geonetworkSharingURL = url + '/geonetwork/srv/api/0.1/records/' + u + '/sharing'
 		#click.echo(geonetworkSharingURL)
 
-		# build dictionary of group operations for groups with this uuid, 
-		# where key is operation column header and value is cell value
-		privlist = {}
+		privlist = []
 		sf = df.loc[df['UUID'] == u]
 		for index, row in sf.iterrows():
-			# print row
+			sharingdict = {}
+			groupID = groupdict[row["GROUP"]]
+			sharingdict.update({"group":groupID,
+				"operations": {k.lower(): v for (k, v) in row.items() if k not in ['UUID', 'GROUP']}
+				})
 
-			# Try and get an existing request object by it's UUID, if there isn't one
-			# create a new one and associate it with the UUID in the requests
-			sharing =privlist.get(row["UUID"], {"clear": True, "privileges": []})
-			privlist[row['UUID']] = sharing
+			# create a list collection of all the dictionary entries for that UUID
+			privlist.append(sharingdict)
 
-			# Create a new privilege object
-			privilege = {"group": groupdict[row["GROUP"]]}
-			privilege["operations"] = {k.lower(): v == 'TRUE' for (k, v) in row.items() if k not in ['UUID', 'GROUP']}
+		# add the list to the dictionary of operation options
+		privdict = {}
+		privdict.update({"clear":True,"privileges":privlist})
 
-			# Append our new privilege to the privileges list
-			sharing["privileges"].append(privilege)
-
-	
 		# send privdict to api as json payload
 		session = ctx.obj['session']
 		session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
@@ -296,7 +292,7 @@ def sharing(ctx,csvfile):
 		sharingURL = session.put(geonetworkSharingURL, 
 			headers=headers, 
 			verify=False,
-			json = sharing
+			json =privdict
 			)
 
 		# rudimentary error handling
@@ -306,6 +302,7 @@ def sharing(ctx,csvfile):
 		else:
 			click.echo(click.style(row['UUID'] + ': error \n' + sharingURL.text, fg='red'))
 			results.append('error')
+	
 	counter = Counter(results)
 	click.echo('=============')
 	click.echo('RESULTS: see sharingresults.csv for details')
