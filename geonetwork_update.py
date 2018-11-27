@@ -189,8 +189,7 @@ def urlremove(ctx,csvfile):
 			params = (
 				('uuids', row['UUID']),
 				('index', 'true'),
-				('url', row['OLDURL']),
-				('name', row['NAME'])
+				('url', row['OLDURL'])
 			)
 
 			session = ctx.obj['session']
@@ -198,7 +197,7 @@ def urlremove(ctx,csvfile):
 			session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
 			headers = session.headers
 			cookies = session.cookies
-			geonetworkUpdateURL = url + '/geonetwork/srv/api/0.1/processes/onlinesrc-remove'
+			geonetworkUpdateURL = url + '/geonetwork/srv/api/0.1/processes/extended-onlinesrc-remove'
 			updateURL = session.post(geonetworkUpdateURL, 
 				headers=headers, 
 				params=params, 
