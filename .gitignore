@@ -4,5 +4,6 @@ include/
 lib/
 local/
 share/
+man/
 *.pyc
 *.csv

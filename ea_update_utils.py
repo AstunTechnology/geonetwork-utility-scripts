@@ -17,14 +17,14 @@ def cli(ctx,url,username,password):
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-		
+
 	geonetwork_session = requests.Session()
 	geonetwork_session.auth = HTTPBasicAuth(username, password)
 	geonetwork_session.headers.update({"Accept" : "application/json"})
 
 	# Make a call to an endpoint to get cookies and an xsrf token
 
-	geonetwork_url = url + '/geonetwork/srv/eng/info?type=me'
+	geonetwork_url = url + '/eng/info?type=me'
 	r_post = geonetwork_session.post(geonetwork_url,
 		verify=False
 		)
@@ -74,13 +74,13 @@ def urlupdate(ctx,csvfile):
 			session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
 			headers = session.headers
 			cookies = session.cookies
-			geonetworkUpdateURL = url + '/geonetwork/srv/api/0.1/processes/extended-url-host-relocator'
-			updateURL = session.post(geonetworkUpdateURL, 
-				headers=headers, 
-				params=params, 
+			geonetworkUpdateURL = url + '/api/0.1/processes/extended-url-host-relocator'
+			updateURL = session.post(geonetworkUpdateURL,
+				headers=headers,
+				params=params,
 				verify=False
 				)
-			
+
 			# get at response for some error handling
 			response = json.loads(updateURL.text)
 
@@ -137,10 +137,10 @@ def urladd(ctx,csvfile):
 			headers = session.headers
 			cookies = session.cookies
 			headers.update({'Content-Type': 'application/json'})
-			geonetworkAddURL = url + '/geonetwork/srv/api/0.1/records/batchediting?uuids=' + row['UUID']
-			updateURL = session.put(geonetworkAddURL, 
-				headers=headers, 
-				data=jsonpayload, 
+			geonetworkAddURL = url + '/api/0.1/records/batchediting?uuids=' + row['UUID']
+			updateURL = session.put(geonetworkAddURL,
+				headers=headers,
+				data=jsonpayload,
 				verify=False
 				)
 
@@ -197,13 +197,13 @@ def urlremove(ctx,csvfile):
 			session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
 			headers = session.headers
 			cookies = session.cookies
-			geonetworkUpdateURL = url + '/geonetwork/srv/api/0.1/processes/extended-onlinesrc-remove'
-			updateURL = session.post(geonetworkUpdateURL, 
-				headers=headers, 
-				params=params, 
+			geonetworkUpdateURL = url + '/api/0.1/processes/extended-onlinesrc-remove'
+			updateURL = session.post(geonetworkUpdateURL,
+				headers=headers,
+				params=params,
 				verify=False
 				)
-			
+
 			# get at response for some error handling
 			response = json.loads(updateURL.text)
 
@@ -243,28 +243,28 @@ def sharing(ctx,csvfile):
 	session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
 	headers = session.headers
 	cookies = session.cookies
-	
+
 	# get group ID from name and create dictionary of names and ids
-	groupurl = url + '/geonetwork/srv/api/0.1/groups?withReservedGroup=true'
+	groupurl = url + '/api/0.1/groups?withReservedGroup=true'
 	groupresponse = session.get(groupurl,
 		verify=False
 		)
 	groupdict = {g["name"]: g["id"] for g in json.loads(groupresponse.text)}
 
 	df = pd.read_csv(csvfile)
-	
+
 	uuidlist = []
 	results=[]
 	for index, row in df.iterrows():
 		# iterate through uuids and create list of distinct uuids. Also use
 		# this list later for a results csv
-		if row["UUID"] not in uuidlist: 
+		if row["UUID"] not in uuidlist:
 			uuidlist.append(row["UUID"])
 			rf = pd.DataFrame(uuidlist, columns=['UUID'])
-	
+
 	for u in uuidlist:
 		# build sharingurl from uuid
-		geonetworkSharingURL = url + '/geonetwork/srv/api/0.1/records/' + u + '/sharing'
+		geonetworkSharingURL = url + '/api/0.1/records/' + u + '/sharing'
 		#click.echo(geonetworkSharingURL)
 
 		privlist = []
@@ -288,8 +288,8 @@ def sharing(ctx,csvfile):
 		session.auth = HTTPBasicAuth(ctx.obj['username'],ctx.obj['password'])
 		headers = session.headers
 		cookies = session.cookies
-		sharingURL = session.put(geonetworkSharingURL, 
-			headers=headers, 
+		sharingURL = session.put(geonetworkSharingURL,
+			headers=headers,
 			verify=False,
 			json =privdict
 			)
@@ -301,7 +301,7 @@ def sharing(ctx,csvfile):
 		else:
 			click.echo(click.style(row['UUID'] + ': error \n' + sharingURL.text, fg='red'))
 			results.append('error')
-	
+
 	counter = Counter(results)
 	click.echo('=============')
 	click.echo('RESULTS: see sharingresults.csv for details')
