@@ -6,4 +6,9 @@ local/
 share/
 man/
 *.pyc
+# don't commit any real csvs
 *.csv
+# don't commit log files
+*.log*
+#don't commit the real jdbc.properties file
+jdbc.properties

@@ -1,0 +1,5 @@
+jdbc.username=geonetwork
+jdbc.password=killeddonegraveround
+jdbc.database=geonetwork
+jdbc.host=localhost
+jdbc.port=3333
