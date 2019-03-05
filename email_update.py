@@ -142,12 +142,12 @@ def updatemetadata(ctx,csvfile):
 	headers = session.headers
 	cookies = session.cookies
 
- 	uuidlist = []
+	uuidlist = []
 
 	# read oldemails from csv and pop selected records into a bucket
 	df = pd.read_csv(csvfile)
 	for index, row in df.iterrows():
-		geonetworkSearchURL = url + '/eng/q?any=' + row['OLDEMAIL']
+		geonetworkSearchURL = url + '/eng/q?_isTemplate=y+or+n&any=' + row['OLDEMAIL']
 		click.echo(geonetworkSearchURL)
 		searchURL = session.put(geonetworkSearchURL,
 			headers=headers,
@@ -174,8 +174,9 @@ def updatemetadata(ctx,csvfile):
 				params=params,
 				verify=False
 			)
+		logger.info('Updating metadata for email: %s' % (row['OLDEMAIL']))
 
-		click.echo(updateURL.text)
+	logger.info('Finished updating user emails')
 
 
 
