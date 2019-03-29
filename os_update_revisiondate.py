@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import requests
 import click
 from requests.auth import HTTPBasicAuth
