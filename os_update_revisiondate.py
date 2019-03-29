@@ -29,7 +29,7 @@ logger.info('Starting update')
 @click.option('--password', required=True, help='Geonetwork password')
 @click.pass_context
 def cli(ctx,url,username,password):
-	"""Modules for updating metadata UUIDs see readme for further details"""
+	"""Modules for updating metadata see readme for further details"""
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -60,7 +60,7 @@ def cli(ctx,url,username,password):
 @cli.command()
 @click.pass_context
 def osrevisionupdate(ctx):
-	"""Update OS metadata with revisiondate from their atom feed"""
+	"""Update OS metadata with revisiondate from their atom feed. Requires Ordnance Survey metadata to be in category 'Ordnance Survey'"""
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -73,7 +73,7 @@ def osrevisionupdate(ctx):
 	uuidlist = []
 
 	# create a selection bucket containing the records owned by the OS group
-	geonetworkSelectURL = url + '/eng/q?bucket=e101&facet.q=groupOwner%2F39134'
+	geonetworkSelectURL = url + '/eng/q?_cat=Ordnance+Survey'
 	selectURL = session.put(geonetworkSelectURL,
 		headers=headers,
 		verify=False
