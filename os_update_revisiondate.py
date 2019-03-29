@@ -76,39 +76,30 @@ def osrevisionupdate(ctx):
 	uuidlist = []
 
 	# create a selection bucket containing the records owned by the OS group
-	geonetworkSelectURL = url + '/eng/q?_cat=Ordnance+Survey'
+	geonetworkSearchURL = url + '/eng/q?_cat=Ordnance+Survey'
+	searchURL = session.put(geonetworkSearchURL,
+		headers=headers,
+		verify=False
+		)
+	#click.echo(geonetworkSearchURL)
+
+
+	# add search results to a bucket called metadata
+	geonetworkSelectURL = url + '/api/0.1/selections/metadata'
 	selectURL = session.put(geonetworkSelectURL,
 		headers=headers,
 		verify=False
 		)
+	#click.echo(json.loads(selectURL.text))
 
-	# append uuids from returned xml to list
-	e = xml.etree.ElementTree.fromstring(selectURL.text.encode('utf-8'))
-	for m in e:
-		uuidlist.append(m[0][1].text)
-
-	# log number of selected records
-	logger.info(str(len(uuidlist)) + "records selected")
-
-
-	# run the os update date process on each item in that list
-	for u in uuidlist:
-		params = (
-				('uuids', u),
-				('index', 'true')
-			)
-		geonetworkProcessURL = url + '/api/0.1/processes/os-update-revisiondate'
-		processURL = session.post(geonetworkProcessURL,
+	geonetworkProcessURL = url + '/api/0.1/processes/os-update-revisiondate'
+	processURL = session.post(geonetworkProcessURL,
 			headers=headers,
-			params=params,
+			#params=params,
 			verify=False
 			)
 
-		response = json.loads(processURL.text)
-		if response["numberOfRecordsProcessed"] == 1:
-			logger.info(str(u) + ': done')
-		else:
-			logger.error(str(u) + str(response))
+	logger.info(json.loads(processURL.text))
 
 
 if __name__ == '__main__':
