@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import requests
 import click
 from requests.auth import HTTPBasicAuth
