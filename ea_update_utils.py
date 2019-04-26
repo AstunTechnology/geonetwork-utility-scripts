@@ -5,6 +5,8 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import json
 import pandas as pd
 from collections import Counter
+import os
+import glob
 
 @click.group()
 @click.option('--url', prompt=True, help='Geonetwork URL')
@@ -42,10 +44,11 @@ def cli(ctx,url,username,password):
 
 
 @cli.command()
-@click.option('--csvfile',prompt=True, help='CSV file')
+@click.option('--inputdir',prompt=True, help='Directory containing CSV file')
 @click.pass_context
-def urlupdate(ctx,csvfile):
-	"""Update oldURL and replace with newURL, passed from a CSV file"""
+def urlupdate(ctx,inputdir):
+	"""Update oldURL and replace with newURL, passed from a CSV file.
+	Will take latest (modified) csv file in named input directory"""
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -53,7 +56,11 @@ def urlupdate(ctx,csvfile):
 	uuidlist = []
 	results = []
 
-	df = pd.read_csv(csvfile)
+	# go to directory
+	# get latest csv file by date
+	list_of_files = glob.glob(inputdir +'/*.csv')
+    latest_file = max(list_of_files, key=os.path.getmtime)
+	df = pd.read_csv(latest_file)
 	for index, row in df.iterrows():
 		uuidlist.append(row["UUID"])
 		rf = pd.DataFrame(uuidlist, columns=['UUID'])
@@ -105,9 +112,9 @@ def urlupdate(ctx,csvfile):
 	rf.to_csv('urlupdateresults.csv', index=False)
 
 @cli.command()
-@click.option('--csvfile',prompt=True, help='CSV file')
+@click.option('--inputdir',prompt=True, help='Directory containing CSV file')
 @click.pass_context
-def urladd(ctx,csvfile):
+def urladd(ctx,inputdir):
 	"""add newURL as a new transfer option, passed from CSV file"""
 
 	# disabling https warnings while testing
@@ -116,7 +123,11 @@ def urladd(ctx,csvfile):
 	uuidlist = []
 	results = []
 
-	df = pd.read_csv(csvfile)
+	# go to directory
+	# get latest csv file by date
+	list_of_files = glob.glob(inputdir +'/*.csv')
+    latest_file = max(list_of_files, key=os.path.getmtime)
+	df = pd.read_csv(latest_file)
 	for index, row in df.iterrows():
 		uuidlist.append(row["UUID"])
 		rf = pd.DataFrame(uuidlist, columns=['UUID'])
@@ -169,9 +180,9 @@ def urladd(ctx,csvfile):
 
 
 @cli.command()
-@click.option('--csvfile',prompt=True, help='CSV file')
+@click.option('--inputdir',prompt=True, help='Directory containing CSV file')
 @click.pass_context
-def urlremove(ctx,csvfile):
+def urlremove(ctx,inputdir):
 	"""remove oldURL as a transfer option, passed from CSV file"""
 
 	# disabling https warnings while testing
@@ -180,7 +191,11 @@ def urlremove(ctx,csvfile):
 	uuidlist = []
 	results = []
 
-	df = pd.read_csv(csvfile)
+	# go to directory
+	# get latest csv file by date
+	list_of_files = glob.glob(inputdir +'/*.csv')
+    latest_file = max(list_of_files, key=os.path.getmtime)
+	df = pd.read_csv(latest_file)
 	for index, row in df.iterrows():
 		uuidlist.append(row["UUID"])
 		rf = pd.DataFrame(uuidlist, columns=['UUID'])
@@ -228,9 +243,9 @@ def urlremove(ctx,csvfile):
 	rf.to_csv('urlremoveresults.csv', index=False)
 
 @cli.command()
-@click.option('--csvfile',prompt=True, help='CSV file')
+@click.option('--inputdir',prompt=True, help='Directory containing CSV file')
 @click.pass_context
-def sharing(ctx,csvfile):
+def sharing(ctx,inputdir):
 
 	"""update permissions on a record for each group in a CSV"""
 
@@ -251,7 +266,11 @@ def sharing(ctx,csvfile):
 		)
 	groupdict = {g["name"]: g["id"] for g in json.loads(groupresponse.text)}
 
-	df = pd.read_csv(csvfile)
+	# go to directory
+	# get latest csv file by date
+	list_of_files = glob.glob(inputdir +'/*.csv')
+    latest_file = max(list_of_files, key=os.path.getmtime)
+	df = pd.read_csv(latest_file)
 
 	uuidlist = []
 	results=[]
