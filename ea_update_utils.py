@@ -45,9 +45,11 @@ def cli(ctx,url,username,password):
 
 @cli.command()
 @click.option('--inputdir',prompt=True, help='Directory containing CSV file')
+@click.option('--outputsite',prompt=True, type=click.Choice(['DSPUAT','DSPTEST','LIVE']), help='Server updates should apply to')
 @click.pass_context
-def urlupdate(ctx,inputdir):
+def urlupdate(ctx,inputdir,outputsite):
 	"""Update oldURL and replace with newURL, passed from a CSV file.
+	newURL can be one of three, dependent on outputsite parameter passed at CLI.
 	Will take latest (modified) csv file in named input directory"""
 
 	# disabling https warnings while testing
@@ -59,13 +61,21 @@ def urlupdate(ctx,inputdir):
 	# go to directory
 	# get latest csv file by date
 	list_of_files = glob.glob(inputdir +'/*.csv')
-    latest_file = max(list_of_files, key=os.path.getmtime)
+	latest_file = max(list_of_files, key=os.path.getmtime)
 	df = pd.read_csv(latest_file)
+	click.echo(latest_file)
 	for index, row in df.iterrows():
+		# which newURL are we using?
+		if outputsite =='DSPUAT':
+			urlcol = row['NEWDSPUATURL']
+		elif outputsite == 'DSPTEST':
+			urlcol = row['NEWDSPTESTURL']
+		elif outputsite == 'LIVE':
+			urlcol = row['NEWLIVEURL']
 		uuidlist.append(row["UUID"])
 		rf = pd.DataFrame(uuidlist, columns=['UUID'])
-		if pd.notnull(row['OLDURL']) and pd.notnull(row['NEWURL']):
-			#click.echo(row)
+		if pd.notnull(row['OLDURL']) and pd.notnull(urlcol):
+			click.echo(row)
 			params = (
 				('uuids', row['UUID']),
 				('index', 'true'),
@@ -73,7 +83,7 @@ def urlupdate(ctx,inputdir):
 				('newProtocol', row['PROTOCOL']),
 				('newName', row['NAME']),
 				('newDescription', row['DESCRIPTION']),
-				('newUrlPrefix', row['NEWURL'])
+				('newUrlPrefix', urlcol)
 			)
 
 			session = ctx.obj['session']
@@ -87,7 +97,7 @@ def urlupdate(ctx,inputdir):
 				params=params,
 				verify=False
 				)
-
+			click.echo(updateURL.text)
 			# get at response for some error handling
 			response = json.loads(updateURL.text)
 
@@ -113,8 +123,9 @@ def urlupdate(ctx,inputdir):
 
 @cli.command()
 @click.option('--inputdir',prompt=True, help='Directory containing CSV file')
+@click.option('--outputsite',prompt=True, type=click.Choice(['DSPUAT','DSPTEST','LIVE']), help='Server updates should apply to')
 @click.pass_context
-def urladd(ctx,inputdir):
+def urladd(ctx,inputdir,outputsite):
 	"""add newURL as a new transfer option, passed from CSV file"""
 
 	# disabling https warnings while testing
@@ -126,16 +137,23 @@ def urladd(ctx,inputdir):
 	# go to directory
 	# get latest csv file by date
 	list_of_files = glob.glob(inputdir +'/*.csv')
-    latest_file = max(list_of_files, key=os.path.getmtime)
+	latest_file = max(list_of_files, key=os.path.getmtime)
 	df = pd.read_csv(latest_file)
 	for index, row in df.iterrows():
+		# which newURL are we using?
+		if outputsite =='DSPUAT':
+			urlcol = row['NEWDSPUATURL']
+		elif outputsite == 'DSPTEST':
+			urlcol = row['NEWDSPTESTURL']
+		elif outputsite == 'LIVE':
+			urlcol = row['NEWLIVEURL']
 		uuidlist.append(row["UUID"])
 		rf = pd.DataFrame(uuidlist, columns=['UUID'])
-		if pd.isnull(row['OLDURL']) and pd.notnull(row['NEWURL']):
+		if pd.isnull(row['OLDURL']) and pd.notnull(urlcol):
 			# build json payload
 			jsonpayload = json.dumps([{"value":"<gmd:onLine xmlns:gmd=\"http://www.isotc211.org/2005/gmd\"> \
 							<gmd:CI_OnlineResource> \
-							<gmd:linkage><gmd:URL>" + row['NEWURL'] + "</gmd:URL></gmd:linkage> \
+							<gmd:linkage><gmd:URL>" + urlcol + "</gmd:URL></gmd:linkage> \
 							<gmd:protocol><gco:CharacterString xmlns:gco=\"http://www.isotc211.org/2005/gco\">" + row['PROTOCOL'] + "</gco:CharacterString></gmd:protocol>  \
 							<gmd:name><gco:CharacterString xmlns:gco=\"http://www.isotc211.org/2005/gco\">" + row['NAME'] + "</gco:CharacterString></gmd:name>  \
 							<gmd:description><gco:CharacterString xmlns:gco=\"http://www.isotc211.org/2005/gco\">" + row['DESCRIPTION'] + "</gco:CharacterString></gmd:description>  \
@@ -194,12 +212,12 @@ def urlremove(ctx,inputdir):
 	# go to directory
 	# get latest csv file by date
 	list_of_files = glob.glob(inputdir +'/*.csv')
-    latest_file = max(list_of_files, key=os.path.getmtime)
+	latest_file = max(list_of_files, key=os.path.getmtime)
 	df = pd.read_csv(latest_file)
 	for index, row in df.iterrows():
 		uuidlist.append(row["UUID"])
 		rf = pd.DataFrame(uuidlist, columns=['UUID'])
-		if pd.notnull(row['OLDURL']) and pd.isnull(row['NEWURL']):
+		if pd.notnull(row['OLDURL']) and pd.isnull(row['NEWDSPTESTURL']) and pd.isnull(row['NEWDSPUATURL']) and pd.isnull(row['NEWLIVEURL']):
 			#click.echo(row)
 			params = (
 				('uuids', row['UUID']),
@@ -269,7 +287,7 @@ def sharing(ctx,inputdir):
 	# go to directory
 	# get latest csv file by date
 	list_of_files = glob.glob(inputdir +'/*.csv')
-    latest_file = max(list_of_files, key=os.path.getmtime)
+	latest_file = max(list_of_files, key=os.path.getmtime)
 	df = pd.read_csv(latest_file)
 
 	uuidlist = []

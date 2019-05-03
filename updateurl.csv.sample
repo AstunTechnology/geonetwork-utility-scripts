@@ -1,9 +1,9 @@
-UUID,OLDURL,NEWURL,PROTOCOL,NAME,DESCRIPTION
-5ad3a06b-049d-4404-b383-a2919e6ce295,https://environment-test.data.gov.uk/portal/home/item.html?id=750e60d5188b4a2095bf9af34920198b/data,https://foo.bar.com/1,DSP:ESRI,Alice,Radioactive Substances Register download
-7910a2bf-aa5b-49b3-96c7-1815f424c646,https://environment-test.data.gov.uk/DefraDataDownload/?mapService=SURVEY/LIDAR_Tiles_DSM_1996&Mode=spatial,https://foo.bar.com/2,DSP:ESRI,Bob,LIDAR DSM Time Stamped Tiles 1996 Download
-7910a2bf-aa5b-49b3-96c7-1815f424c646,https://environment-test.data.gov.uk/DefraDataDownload/?mapService=SURVEY/LIDAR_Tiles_DSM_2002&Mode=spatial,https://foo.bar.com/3,DSP:ESRI,Caroline,LIDAR DSM Time Stamped Tiles 2002 Download
-8d566ea5-d16f-4e9d-a764-b56dd605262c,,https://foo.bar.com/4,https,bob,bob's new site 4
-3d16d779-3569-4313-bea1-0cd36fdb8a62,,https://foo.bar.com/5,https,bob,bob's new site 5
-4345a059-680b-4ef7-a9ab-0220adacd3da,https://foo.bar.com/6,,https,bob,bob's new site 6
-eefc61a4-6c8c-4bd0-8a91-ddb794e4abc0,,https://foo.bar.com/7,https,bob,bob's new site 7
-bah,https://foo.bar.com/7,,https,bob,bob's new site 7
+UUID,OLDURL,NEWDSPTESTURL,NEWDSPUATURL,NEWLIVEURL,PROTOCOL,NAME,DESCRIPTION
+5ad3a06b-049d-4404-b383-a2919e6ce295,https://environment-test.data.gov.uk/portal/home/item.html?id=750e60d5188b4a2095bf9af34920198b/data,https://dsptest.bar.com/1,https://dspuat.bar.com/1,https://live.bar.com/1,DSP:ESRI,Alice,Radioactive Substances Register download
+7910a2bf-aa5b-49b3-96c7-1815f424c646,https://environment-test.data.gov.uk/DefraDataDownload/?mapService=SURVEY/LIDAR_Tiles_DSM_1996&Mode=spatial,https://dsptest.bar.com/2,https://dspuat.bar.com/2,https://live.bar.com/2,DSP:ESRI,Bob,LIDAR DSM Time Stamped Tiles 1996 Download
+7910a2bf-aa5b-49b3-96c7-1815f424c646,https://environment-test.data.gov.uk/DefraDataDownload/?mapService=SURVEY/LIDAR_Tiles_DSM_2002&Mode=spatial,https://dsptest.bar.com/3,https://dspuat.bar.com/3,https://live.bar.com/3,DSP:ESRI,Caroline,LIDAR DSM Time Stamped Tiles 2002 Download
+8d566ea5-d16f-4e9d-a764-b56dd605262c,,https://dsptest.bar.com/4,https://dspuat.bar.com/4,https://live.bar.com/4,https,bob,bob's new site 4
+3d16d779-3569-4313-bea1-0cd36fdb8a62,,https://dsptest.bar.com/5,https://dspuat.bar.com/5,https://live.bar.com/5,https,bob,bob's new site 5
+4345a059-680b-4ef7-a9ab-0220adacd3da,https://foo.bar.com/6,,,,https,bob,bob's new site 6
+eefc61a4-6c8c-4bd0-8a91-ddb794e4abc0,,https://dsptest.bar.com/7,https://dspuat.bar.com/7,https://live.bar.com/7,https,bob,bob's new site 7
+bah,https://foo.bar.com/7,,,,https,bob,bob's new site 7
