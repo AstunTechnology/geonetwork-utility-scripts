@@ -7,6 +7,43 @@ import pandas as pd
 from collections import Counter
 import os
 import glob
+from modules import MailLogger
+import logging
+from logging.handlers import RotatingFileHandler
+
+# set up standard logging to file- rolling file appender
+
+logger = logging.getLogger(__name__)
+
+loggingHandler = RotatingFileHandler("ea-update-utilities.log",
+                                      maxBytes=102400, backupCount=5)
+loggingHandler.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
+
+loggingHandler.setFormatter(
+    logging.Formatter("%(asctime)s - "
+                      "%(levelname)s - %(message)s"))
+logger.addHandler(loggingHandler)
+
+# set up email logging- one file per run
+
+# if not required, comment out the smtpDict block
+
+smtpDict = {
+	"smtpServer":"smtp.mailtrap.io",
+	"smtpPort":2525,
+	"username":"7e8c433f062189",
+	"password":"a8903125ef6d03",
+	"sender":"jocook@astuntechnology.com",
+	"recipients":[
+			"jocook@astuntechnology.com"
+			],
+	"subject":"Automated Updates Error"
+}
+if smtpDict:
+	eaMailLogger = MailLogger.MailLogger(os.getcwd(),smtpDict).fileLogger
+
+
 
 @click.group()
 @click.option('--url', prompt=True, help='Geonetwork URL')
@@ -51,6 +88,9 @@ def urlupdate(ctx,inputdir,outputsite):
 	"""Update oldURL and replace with newURL, passed from a CSV file.
 	newURL can be one of three, dependent on outputsite parameter passed at CLI.
 	Will take latest (modified) csv file in named input directory"""
+
+	logger.info('Starting urlupdate')
+	eaMailLogger.info('Starting urlupdate')
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -97,27 +137,39 @@ def urlupdate(ctx,inputdir,outputsite):
 				params=params,
 				verify=False
 				)
-			click.echo(updateURL.text)
+			#click.echo(updateURL.text)
 			# get at response for some error handling
 			response = json.loads(updateURL.text)
+			logger.info(response)
 
 			if updateURL.status_code == 201 and response["numberOfNullRecords"] == 0 and not response["errors"]:
-				click.echo(click.style(row['UUID'] + ': done', fg='green'))
+				logger.info(row['UUID'] + ': done')
+				if smtpDict:
+					eaMailLogger.info(row['UUID'] + ': done')
 				results.append('done')
 			elif updateURL.status_code == 201 and response["numberOfNullRecords"] == 1:
-				click.echo(click.style(row['UUID'] + ': not found', fg='red'))
+				logger.info(row['UUID'] + ': not found')
+				eaMailLogger.info(row['UUID'] + ': not found')
 				results.append('not found')
 			else:
-				click.echo(click.style(row['UUID'] + ': error \n' + updateURL.text, fg='red'))
+				logger.error(row['UUID'] + ': error \n' + updateURL.text)
+				if smtpDict:
+					eaMailLogger.error(row['UUID'] + ': error \n' + updateURL.text)
 				results.append('error')
+
 		else:
-			click.echo(click.style(row['UUID'] + ': skipped', fg='blue'))
+			logger.info(row['UUID'] + ': skipped')
+			eaMailLogger.info(row['UUID'] + ': skipped')
 			results.append('skipped')
 	counter = Counter(results)
+	logger.info('Finished Processing')
+	eaMailLogger.info('Finished Processing')
+	logger.info('---------------')
 	click.echo('=============')
 	click.echo('RESULTS: see updateurlresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
 		print k, v
+		eaMailLogger.info(k, v)
 	rf.insert(1,'RESULT',results)
 	rf.to_csv('urlupdateresults.csv', index=False)
 
@@ -127,6 +179,8 @@ def urlupdate(ctx,inputdir,outputsite):
 @click.pass_context
 def urladd(ctx,inputdir,outputsite):
 	"""add newURL as a new transfer option, passed from CSV file"""
+
+	logger.info('Starting urladd')
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -175,20 +229,25 @@ def urladd(ctx,inputdir,outputsite):
 
 			# get at response for some error handling
 			response = json.loads(updateURL.text)
+			logger.info(response)
 
 			if updateURL.status_code == 201 and response["numberOfNullRecords"] == 0 and not response["errors"]:
-				click.echo(click.style(row['UUID'] + ': done', fg='green'))
+				logger.info(row['UUID'] + ': done')
 				results.append('done')
 			elif updateURL.status_code == 201 and response["numberOfNullRecords"] == 1:
-				click.echo(click.style(row['UUID'] + ': not found', fg='red'))
+				logger.info(row['UUID'] + ': not found')
 				results.append('not found')
 			else:
-				click.echo(click.style(row['UUID'] + ': error \n' + updateURL.text, fg='red'))
+				logger.error(row['UUID'] + ': error \n' + updateURL.text)
+				if smtpDict:
+					eaMailLogger.error(row['UUID'] + ': error \n' + updateURL.text)
 				results.append('error')
 		else:
-			click.echo(click.style(row['UUID'] + ': skipped', fg='blue'))
+			logger.info(row['UUID'] + ': skipped')
 			results.append('skipped')
 	counter = Counter(results)
+	logger.info('Finished Processing')
+	logger.info('---------------')
 	click.echo('=============')
 	click.echo('RESULTS: see updateaddresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
@@ -202,6 +261,8 @@ def urladd(ctx,inputdir,outputsite):
 @click.pass_context
 def urlremove(ctx,inputdir):
 	"""remove oldURL as a transfer option, passed from CSV file"""
+
+	logger.info('Starting urlremove')
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -239,20 +300,25 @@ def urlremove(ctx,inputdir):
 
 			# get at response for some error handling
 			response = json.loads(updateURL.text)
+			logger.info(response)
 
 			if updateURL.status_code == 201 and response["numberOfNullRecords"] == 0 and not response["errors"]:
-				click.echo(click.style(row['UUID'] + ': done', fg='green'))
+				logger.info(row['UUID'] + ': done')
 				results.append('done')
 			elif updateURL.status_code == 201 and response["numberOfNullRecords"] == 1:
-				click.echo(click.style(row['UUID'] + ': not found', fg='red'))
+				logger.info(row['UUID'] + ': not found')
 				results.append('not found')
 			else:
-				click.echo(click.style(row['UUID'] + ': error \n' + updateURL.text, fg='red'))
+				logger.error(row['UUID'] + ': error \n' + updateURL.text)
+				if smtpDict:
+					eaMailLogger.error(row['UUID'] + ': error \n' + updateURL.text)
 				results.append('error')
 		else:
-			click.echo(click.style(row['UUID'] + ': skipped', fg='blue'))
+			logger.info(row['UUID'] + ': skipped')
 			results.append('skipped')
 	counter = Counter(results)
+	logger.info('Finished Processing')
+	logger.info('---------------')
 	click.echo('=============')
 	click.echo('RESULTS: see updateremoveresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
@@ -266,6 +332,8 @@ def urlremove(ctx,inputdir):
 def sharing(ctx,inputdir):
 
 	"""update permissions on a record for each group in a CSV"""
+
+	logger.info('Starting permissions update')
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -330,16 +398,21 @@ def sharing(ctx,inputdir):
 			verify=False,
 			json =privdict
 			)
+		logger.info(json.loads(sharingURL.text))
 
 		# rudimentary error handling
 		if sharingURL.status_code == 204:
-			click.echo(click.style(row['UUID'] + ': done', fg='green'))
+			logger.info(row['UUID'] + ': done')
 			results.append('done')
 		else:
-			click.echo(click.style(row['UUID'] + ': error \n' + sharingURL.text, fg='red'))
+			logger.error(row['UUID'] + ': error \n' + sharingURL.text)
+			if smtpDict:
+				eaMailLogger.error(row['UUID'] + ': error \n' + sharingURL.text)
 			results.append('error')
 
 	counter = Counter(results)
+	logger.info('Finished Processing')
+	logger.info('---------------')
 	click.echo('=============')
 	click.echo('RESULTS: see sharingresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
