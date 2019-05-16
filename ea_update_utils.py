@@ -10,6 +10,7 @@ import glob
 from modules import MailLogger
 import logging
 from logging.handlers import RotatingFileHandler
+import sys
 
 # set up standard logging to file- rolling file appender
 
@@ -38,7 +39,7 @@ smtpDict = {
 	"recipients":[
 			"jocook@astuntechnology.com"
 			],
-	"subject":"Automated Updates Error"
+	"subject":"Automated Updates Log"
 }
 if smtpDict:
 	eaMailLogger = MailLogger.MailLogger(os.getcwd(),smtpDict).fileLogger
@@ -60,6 +61,11 @@ def cli(ctx,url,username,password):
 	geonetwork_session = requests.Session()
 	geonetwork_session.auth = HTTPBasicAuth(username, password)
 	geonetwork_session.headers.update({"Accept" : "application/json"})
+
+	# start logging
+	logger.info('---------------')
+	logger.info('Starting update')
+	eaMailLogger.info('Starting update')
 
 	# Make a call to an endpoint to get cookies and an xsrf token
 
@@ -89,8 +95,9 @@ def urlupdate(ctx,inputdir,outputsite):
 	newURL can be one of three, dependent on outputsite parameter passed at CLI.
 	Will take latest (modified) csv file in named input directory"""
 
-	logger.info('Starting urlupdate')
-	eaMailLogger.info('Starting urlupdate')
+	logger.info('Updating URL for %s' % (outputsite))
+	if smtpDict:
+		eaMailLogger.info('Updating URL for %s' % (outputsite))
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -100,18 +107,36 @@ def urlupdate(ctx,inputdir,outputsite):
 
 	# go to directory
 	# get latest csv file by date
-	list_of_files = glob.glob(inputdir +'/*.csv')
-	latest_file = max(list_of_files, key=os.path.getmtime)
+	try:
+		list_of_files = glob.glob(inputdir +'/*.csv')
+		latest_file = max(list_of_files, key=os.path.getmtime)
+	except:
+		errorstring = 'Directory or CSV file not found, aborting. Full error: %s' % (str(sys.exc_info()))
+		logger.error(errorstring)
+		if smtpDict:
+			eaMailLogger.error(errorstring)
+		click.echo(errorstring)
+		sys.exit(1)
+
 	df = pd.read_csv(latest_file)
 	click.echo(latest_file)
 	for index, row in df.iterrows():
 		# which newURL are we using?
-		if outputsite =='DSPUAT':
-			urlcol = row['NEWDSPUATURL']
-		elif outputsite == 'DSPTEST':
-			urlcol = row['NEWDSPTESTURL']
-		elif outputsite == 'LIVE':
-			urlcol = row['NEWLIVEURL']
+		try:
+			if outputsite =='DSPUAT':
+				urlcol = row['NEWDSPUATURL']
+			elif outputsite == 'DSPTEST':
+				urlcol = row['NEWDSPTESTURL']
+			elif outputsite == 'LIVE':
+				urlcol = row['NEWLIVEURL']
+		except:
+			errorstring = 'Column NEW%sURL not present in CSV, aborting. Full error: %s' % (outputsite, str(sys.exc_info()))
+			logger.error(errorstring)
+			if smtpDict:
+				eaMailLogger.error(errorstring)
+			click.echo(errorstring)
+			sys.exit(1)
+
 		uuidlist.append(row["UUID"])
 		rf = pd.DataFrame(uuidlist, columns=['UUID'])
 		if pd.notnull(row['OLDURL']) and pd.notnull(urlcol):
@@ -132,15 +157,23 @@ def urlupdate(ctx,inputdir,outputsite):
 			headers = session.headers
 			cookies = session.cookies
 			geonetworkUpdateURL = url + '/api/0.1/processes/extended-url-host-relocator'
+
 			updateURL = session.post(geonetworkUpdateURL,
 				headers=headers,
 				params=params,
 				verify=False
 				)
-			#click.echo(updateURL.text)
-			# get at response for some error handling
-			response = json.loads(updateURL.text)
-			logger.info(response)
+			click.echo(updateURL.text)
+			try:
+				response = json.loads(updateURL.text)
+				logger.info(response)
+			except:
+				errorstring = 'Processing error, see full error message for details. Full error: %s' % (updateURL.text)
+				logger.error(errorstring)
+				if smtpDict:
+					eaMailLogger.error(errorstring)
+				click.echo(errorstring)
+				sys.exit(1)
 
 			if updateURL.status_code == 201 and response["numberOfNullRecords"] == 0 and not response["errors"]:
 				logger.info(row['UUID'] + ': done')
@@ -159,17 +192,18 @@ def urlupdate(ctx,inputdir,outputsite):
 
 		else:
 			logger.info(row['UUID'] + ': skipped')
-			eaMailLogger.info(row['UUID'] + ': skipped')
+			if smtpDict:
+				eaMailLogger.info(row['UUID'] + ': skipped')
 			results.append('skipped')
 	counter = Counter(results)
 	logger.info('Finished Processing')
 	eaMailLogger.info('Finished Processing')
-	logger.info('---------------')
 	click.echo('=============')
 	click.echo('RESULTS: see updateurlresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
 		print k, v
-		eaMailLogger.info(k, v)
+		if smtpDict:
+			eaMailLogger.info('%s %s' % (k, v))
 	rf.insert(1,'RESULT',results)
 	rf.to_csv('urlupdateresults.csv', index=False)
 
@@ -180,7 +214,9 @@ def urlupdate(ctx,inputdir,outputsite):
 def urladd(ctx,inputdir,outputsite):
 	"""add newURL as a new transfer option, passed from CSV file"""
 
-	logger.info('Starting urladd')
+	logger.info('Adding URLs')
+	if smtpDict:
+		eaMailLogger.info('Adding URLs for %s' % (outputsite))
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -190,17 +226,35 @@ def urladd(ctx,inputdir,outputsite):
 
 	# go to directory
 	# get latest csv file by date
-	list_of_files = glob.glob(inputdir +'/*.csv')
-	latest_file = max(list_of_files, key=os.path.getmtime)
+	try:
+		list_of_files = glob.glob(inputdir +'/*.csv')
+		latest_file = max(list_of_files, key=os.path.getmtime)
+	except:
+		errorstring = 'Directory or CSV file not found, aborting. Full error: %s' % (str(sys.exc_info()))
+		logger.error(errorstring)
+		if smtpDict:
+			eaMailLogger.error(errorstring)
+		click.echo(errorstring)
+		sys.exit(1)
+
 	df = pd.read_csv(latest_file)
 	for index, row in df.iterrows():
 		# which newURL are we using?
-		if outputsite =='DSPUAT':
-			urlcol = row['NEWDSPUATURL']
-		elif outputsite == 'DSPTEST':
-			urlcol = row['NEWDSPTESTURL']
-		elif outputsite == 'LIVE':
-			urlcol = row['NEWLIVEURL']
+		try:
+			if outputsite =='DSPUAT':
+				urlcol = row['NEWDSPUATURL']
+			elif outputsite == 'DSPTEST':
+				urlcol = row['NEWDSPTESTURL']
+			elif outputsite == 'LIVE':
+				urlcol = row['NEWLIVEURL']
+		except:
+			errorstring = 'Column NEW%sURL not present in CSV, aborting. Full error: %s' % (outputsite, str(sys.exc_info()))
+			logger.error(errorstring)
+			if smtpDict:
+				eaMailLogger.error(errorstring)
+			click.echo(errorstring)
+			sys.exit(1)
+
 		uuidlist.append(row["UUID"])
 		rf = pd.DataFrame(uuidlist, columns=['UUID'])
 		if pd.isnull(row['OLDURL']) and pd.notnull(urlcol):
@@ -227,31 +281,48 @@ def urladd(ctx,inputdir,outputsite):
 				verify=False
 				)
 
-			# get at response for some error handling
-			response = json.loads(updateURL.text)
-			logger.info(response)
+			click.echo(updateURL.text)
+			try:
+				response = json.loads(updateURL.text)
+				logger.info(response)
+			except:
+				errorstring = 'Processing error, see full error message for details. Full error: %s' % (updateURL.text)
+				logger.error(errorstring)
+				if smtpDict:
+					eaMailLogger.error(errorstring)
+				click.echo(errorstring)
+				sys.exit(1)
+
 
 			if updateURL.status_code == 201 and response["numberOfNullRecords"] == 0 and not response["errors"]:
 				logger.info(row['UUID'] + ': done')
+				if smtpDict:
+					eaMailLogger.info(row['UUID'] + ': done')
 				results.append('done')
 			elif updateURL.status_code == 201 and response["numberOfNullRecords"] == 1:
 				logger.info(row['UUID'] + ': not found')
+				eaMailLogger.info(row['UUID'] + ': not found')
 				results.append('not found')
 			else:
 				logger.error(row['UUID'] + ': error \n' + updateURL.text)
 				if smtpDict:
 					eaMailLogger.error(row['UUID'] + ': error \n' + updateURL.text)
 				results.append('error')
+
 		else:
 			logger.info(row['UUID'] + ': skipped')
+			if smtpDict:
+				eaMailLogger.info(row['UUID'] + ': skipped')
 			results.append('skipped')
 	counter = Counter(results)
 	logger.info('Finished Processing')
-	logger.info('---------------')
+	eaMailLogger.info('Finished Processing')
 	click.echo('=============')
 	click.echo('RESULTS: see updateaddresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
 		print k, v
+		if smtpDict:
+			eaMailLogger.info('%s %s' % (k, v))
 	rf.insert(1,'RESULT',results)
 	rf.to_csv('urladdresults.csv', index=False)
 
@@ -262,7 +333,9 @@ def urladd(ctx,inputdir,outputsite):
 def urlremove(ctx,inputdir):
 	"""remove oldURL as a transfer option, passed from CSV file"""
 
-	logger.info('Starting urlremove')
+	logger.info('Removing URLs')
+	if smtpDict:
+		eaMailLogger.info('Removing URLs')
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -272,19 +345,36 @@ def urlremove(ctx,inputdir):
 
 	# go to directory
 	# get latest csv file by date
-	list_of_files = glob.glob(inputdir +'/*.csv')
-	latest_file = max(list_of_files, key=os.path.getmtime)
+	try:
+		list_of_files = glob.glob(inputdir +'/*.csv')
+		latest_file = max(list_of_files, key=os.path.getmtime)
+	except:
+		errorstring = 'Directory or CSV file not found, aborting. Full error: %s' % (str(sys.exc_info()))
+		logger.error(errorstring)
+		if smtpDict:
+			eaMailLogger.error(errorstring)
+		click.echo(errorstring)
+		sys.exit(1)
+
 	df = pd.read_csv(latest_file)
 	for index, row in df.iterrows():
 		uuidlist.append(row["UUID"])
 		rf = pd.DataFrame(uuidlist, columns=['UUID'])
-		if pd.notnull(row['OLDURL']) and pd.isnull(row['NEWDSPTESTURL']) and pd.isnull(row['NEWDSPUATURL']) and pd.isnull(row['NEWLIVEURL']):
-			#click.echo(row)
-			params = (
-				('uuids', row['UUID']),
-				('index', 'true'),
-				('url', row['OLDURL'])
-			)
+		try:
+			if pd.notnull(row['OLDURL']) and pd.isnull(row['NEWDSPTESTURL']) and pd.isnull(row['NEWDSPUATURL']) and pd.isnull(row['NEWLIVEURL']):
+				#click.echo(row)
+				params = (
+					('uuids', row['UUID']),
+					('index', 'true'),
+					('url', row['OLDURL'])
+				)
+		except:
+			errorstring = 'Column OLDURL not present in CSV, aborting. Full error: %s' % (str(sys.exc_info()))
+			logger.error(errorstring)
+			if smtpDict:
+				eaMailLogger.error(errorstring)
+			click.echo(errorstring)
+			sys.exit(1)
 
 			session = ctx.obj['session']
 			url = ctx.obj['url']
@@ -298,27 +388,41 @@ def urlremove(ctx,inputdir):
 				verify=False
 				)
 
-			# get at response for some error handling
-			response = json.loads(updateURL.text)
-			logger.info(response)
+			click.echo(updateURL.text)
+			try:
+				response = json.loads(updateURL.text)
+				logger.info(response)
+			except:
+				errorstring = 'Processing error, see full error message for details. Full error: %s' % (updateURL.text)
+				logger.error(errorstring)
+				if smtpDict:
+					eaMailLogger.error(errorstring)
+				click.echo(errorstring)
+				sys.exit(1)
 
 			if updateURL.status_code == 201 and response["numberOfNullRecords"] == 0 and not response["errors"]:
 				logger.info(row['UUID'] + ': done')
+				if smtpDict:
+					eaMailLogger.info(row['UUID'] + ': done')
 				results.append('done')
 			elif updateURL.status_code == 201 and response["numberOfNullRecords"] == 1:
 				logger.info(row['UUID'] + ': not found')
+				eaMailLogger.info(row['UUID'] + ': not found')
 				results.append('not found')
 			else:
 				logger.error(row['UUID'] + ': error \n' + updateURL.text)
 				if smtpDict:
 					eaMailLogger.error(row['UUID'] + ': error \n' + updateURL.text)
 				results.append('error')
+
 		else:
 			logger.info(row['UUID'] + ': skipped')
+			if smtpDict:
+				eaMailLogger.info(row['UUID'] + ': skipped')
 			results.append('skipped')
 	counter = Counter(results)
 	logger.info('Finished Processing')
-	logger.info('---------------')
+	eaMailLogger.info('Finished Processing')
 	click.echo('=============')
 	click.echo('RESULTS: see updateremoveresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
@@ -334,6 +438,8 @@ def sharing(ctx,inputdir):
 	"""update permissions on a record for each group in a CSV"""
 
 	logger.info('Starting permissions update')
+	if smtpDict:
+		eaMailLogger.info('Starting permissions update')
 
 	# disabling https warnings while testing
 	requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -354,13 +460,32 @@ def sharing(ctx,inputdir):
 
 	# go to directory
 	# get latest csv file by date
-	list_of_files = glob.glob(inputdir +'/*.csv')
-	latest_file = max(list_of_files, key=os.path.getmtime)
-	df = pd.read_csv(latest_file)
+	try:
+		list_of_files = glob.glob(inputdir +'/*.csv')
+		latest_file = max(list_of_files, key=os.path.getmtime)
+	except:
+		errorstring = 'Directory or CSV file not found, aborting. Full error: %s' % (str(sys.exc_info()))
+		logger.error(errorstring)
+		if smtpDict:
+			eaMailLogger.error(errorstring)
+		click.echo(errorstring)
+		sys.exit(1)
+
 
 	uuidlist = []
 	results=[]
+	df = pd.read_csv(latest_file)
 	for index, row in df.iterrows():
+		# some error checking- do the columns we need exist?
+		errorstring = 'Column not found, aborting. Missing column: '
+		if not set(["UUID","GROUP"]).issubset(df.columns):
+			logger.error(errorstring%s % (set(["UUID","GROUP"]).difference(df.columns)))
+			if smtpDict:
+				eaMailLogger.error(errorstring%s % (set(["UUID","GROUP"]).difference(df.columns)))
+			click.echo(errorstring%s % (set(["UUID","GROUP"]).difference(df.columns)))
+			sys.exit(1)
+
+
 		# iterate through uuids and create list of distinct uuids. Also use
 		# this list later for a results csv
 		if row["UUID"] not in uuidlist:
@@ -398,7 +523,17 @@ def sharing(ctx,inputdir):
 			verify=False,
 			json =privdict
 			)
-		logger.info(json.loads(sharingURL.text))
+
+		try:
+			response = json.loads(sharingURL.text)
+			logger.info(response)
+		except:
+			errorstring = 'Processing error, see full error message for details. Full error: %s' % (sharingURL.text)
+			logger.error(errorstring)
+			if smtpDict:
+				eaMailLogger.error(errorstring)
+			click.echo(errorstring)
+			sys.exit(1)
 
 		# rudimentary error handling
 		if sharingURL.status_code == 204:

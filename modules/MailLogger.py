@@ -50,7 +50,7 @@ class MailLogger():
         s = smtplib.SMTP(smtpDict["smtpServer"], smtpDict["smtpPort"] )
         s.starttls()
         s.login(smtpDict["username"], smtpDict["password"])
-        msg['Subject'] = smtpDict["subject"]
+        msg['Subject'] = smtpDict["subject"] + datetime.now().strftime("%Y_%m_%d")
         msg['From'] = smtpDict["sender"]
         msg['To'] = ','.join(smtpDict["recipients"])
         body = 'See attached report file'
