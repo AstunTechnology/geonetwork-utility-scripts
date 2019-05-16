@@ -455,12 +455,19 @@ def sharing(ctx,inputdir):
 	cookies = session.cookies
 
 	# get group ID from name and create dictionary of names and ids
-	groupurl = url + '/api/0.1/groups?withReservedGroup=true'
-	groupresponse = session.get(groupurl,
-		verify=False
-		)
-	groupdict = {g["name"]: g["id"] for g in json.loads(groupresponse.text)}
-	click.echo(groupresponse.text)
+	try:
+		groupurl = url + '/api/0.1/groups?withReservedGroup=true'
+		groupresponse = session.get(groupurl,
+			verify=False
+			)
+		groupdict = {g["name"]: g["id"] for g in json.loads(groupresponse.text)}
+	except:
+		errorstring = 'Authentication error, see full error message for details. Full error: %s' % (groupresponse.text)
+		logger.error(errorstring)
+		if smtpDict:
+			eaMailLogger.error(errorstring)
+		click.echo(errorstring)
+		sys.exit(1)
 
 	# go to directory
 	# get latest csv file by date
@@ -482,25 +489,25 @@ def sharing(ctx,inputdir):
 	df = pd.read_csv(latest_file)
 	for index, row in df.iterrows():
 		# some error checking- do the columns we need exist?
-		errorstring = 'Column not found, aborting. Missing column: '
-		if not set(["UUID","GROUP"]).issubset(df.columns):
-			logger.error(errorstring%s % (set(["UUID","GROUP"]).difference(df.columns)))
+		collist=["UUID","GROUP","VIEW","DOWNLOAD","DYNAMIC","FEATURED","NOTIFY","EDITING"]
+		errorstring = 'Column not found, aborting. Missing column: %s' % (set(collist).difference(df.columns))
+		if not set(collist).issubset(df.columns):
+			logger.error(errorstring)
 			if smtpDict:
-				eaMailLogger.error(errorstring%s % (set(["UUID","GROUP"]).difference(df.columns)))
-			click.echo(errorstring%s % (set(["UUID","GROUP"]).difference(df.columns)))
+				eaMailLogger.error(errorstring)
+			click.echo(errorstring)
 			sys.exit(1)
-
-
 		# iterate through uuids and create list of distinct uuids. Also use
 		# this list later for a results csv
 		if row["UUID"] not in uuidlist:
 			uuidlist.append(row["UUID"])
 			rf = pd.DataFrame(uuidlist, columns=['UUID'])
 
+
 	for u in uuidlist:
 		# build sharingurl from uuid
 		geonetworkSharingURL = url + '/api/0.1/records/' + u + '/sharing'
-		click.echo(geonetworkSharingURL)
+		#click.echo(geonetworkSharingURL)
 
 		privlist = []
 		sf = df.loc[df['UUID'] == u]
@@ -529,25 +536,16 @@ def sharing(ctx,inputdir):
 			json =privdict
 			)
 
-		try:
-			response = json.loads(sharingURL.text)
-			logger.info(response)
-		except:
-			errorstring = 'Processing error, see full error message for details. Full error: %s' % (sharingURL.text)
-			logger.error(errorstring)
-			if smtpDict:
-				eaMailLogger.error(errorstring)
-			click.echo(errorstring)
-			sys.exit(1)
-
 		# rudimentary error handling
 		if sharingURL.status_code == 204:
 			logger.info(row['UUID'] + ': done')
+			click.echo(row['UUID'] + ': done')
 			if smtpDict:
 				eaMailLogger.info(row['UUID'] + ': done')
 			results.append('done')
 		else:
 			logger.error(row['UUID'] + ': error \n' + sharingURL.text)
+			click.echo(row['UUID'] + ': error \n' + sharingURL.text)
 			if smtpDict:
 				eaMailLogger.error(row['UUID'] + ': error \n' + sharingURL.text)
 			results.append('error')
