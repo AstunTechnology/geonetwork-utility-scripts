@@ -460,12 +460,14 @@ def sharing(ctx,inputdir):
 		verify=False
 		)
 	groupdict = {g["name"]: g["id"] for g in json.loads(groupresponse.text)}
+	click.echo(groupresponse.text)
 
 	# go to directory
 	# get latest csv file by date
 	try:
 		list_of_files = glob.glob(inputdir +'/*.csv')
 		latest_file = max(list_of_files, key=os.path.getmtime)
+		click.echo(latest_file)
 	except:
 		errorstring = 'Directory or CSV file not found, aborting. Full error: %s' % (str(sys.exc_info()))
 		logger.error(errorstring)
@@ -498,7 +500,7 @@ def sharing(ctx,inputdir):
 	for u in uuidlist:
 		# build sharingurl from uuid
 		geonetworkSharingURL = url + '/api/0.1/records/' + u + '/sharing'
-		#click.echo(geonetworkSharingURL)
+		click.echo(geonetworkSharingURL)
 
 		privlist = []
 		sf = df.loc[df['UUID'] == u]
