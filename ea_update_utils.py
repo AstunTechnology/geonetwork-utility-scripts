@@ -197,7 +197,8 @@ def urlupdate(ctx,inputdir,outputsite):
 			results.append('skipped')
 	counter = Counter(results)
 	logger.info('Finished Processing')
-	eaMailLogger.info('Finished Processing')
+	if smtpDict:
+		eaMailLogger.info('Finished Processing')
 	click.echo('=============')
 	click.echo('RESULTS: see updateurlresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
@@ -316,7 +317,8 @@ def urladd(ctx,inputdir,outputsite):
 			results.append('skipped')
 	counter = Counter(results)
 	logger.info('Finished Processing')
-	eaMailLogger.info('Finished Processing')
+	if smtpDict:
+		eaMailLogger.info('Finished Processing')
 	click.echo('=============')
 	click.echo('RESULTS: see updateaddresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
@@ -422,7 +424,8 @@ def urlremove(ctx,inputdir):
 			results.append('skipped')
 	counter = Counter(results)
 	logger.info('Finished Processing')
-	eaMailLogger.info('Finished Processing')
+	if smtpDict:
+		eaMailLogger.info('Finished Processing')
 	click.echo('=============')
 	click.echo('RESULTS: see updateremoveresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
@@ -538,6 +541,8 @@ def sharing(ctx,inputdir):
 		# rudimentary error handling
 		if sharingURL.status_code == 204:
 			logger.info(row['UUID'] + ': done')
+			if smtpDict:
+				eaMailLogger.info(row['UUID'] + ': done')
 			results.append('done')
 		else:
 			logger.error(row['UUID'] + ': error \n' + sharingURL.text)
@@ -547,7 +552,8 @@ def sharing(ctx,inputdir):
 
 	counter = Counter(results)
 	logger.info('Finished Processing')
-	logger.info('---------------')
+	if smtpDict:
+		eaMailLogger.info('Finished Processing')
 	click.echo('=============')
 	click.echo('RESULTS: see sharingresults.csv for details')
 	for k,v in sorted(counter.iteritems()):
