@@ -8,12 +8,13 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import json
 import xml.etree.ElementTree
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 
 logger = logging.getLogger(__name__)
+loglocation = os.path.dirname(os.path.realpath(__file__))
 
-loggingHandler = RotatingFileHandler("os-update-revisiondate.log",
-                                      maxBytes=102400, backupCount=5)
+loggingHandler = RotatingFileHandler(loglocation + "/os-update-revisiondate.log",maxBytes=102400, backupCount=5)
 loggingHandler.setLevel(logging.DEBUG)
 logger.setLevel(logging.DEBUG)
 

@@ -7,8 +7,6 @@ A set of scripts for bulk updates of geonetwork based on supplied csv files. Cur
 
 Outputs results to terminal and csv.
 
-**Note that the URL updating modules can work from the same CSV, and will skip records depending on whether both OLDURL and NEWURL are supplied, or just one.**
-
 # INSTALLATION
 
 **Requires Python 2.7**
