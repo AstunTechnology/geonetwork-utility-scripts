@@ -1,6 +1,6 @@
 arrow==0.15.1
 backports.functools-lru-cache==1.5
-certifi==2022.12.7
+certifi==2023.7.22
 chardet==3.0.4
 charset==1.0.1
 Click==7.0
