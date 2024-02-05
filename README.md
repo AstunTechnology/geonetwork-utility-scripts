@@ -4,32 +4,46 @@ A set of scripts for bulk updates of geonetwork based on supplied csv files. Cur
 
 * Check URLs
 
+## Dependencies
 
-Outputs results to terminal and csv.
+* GeoNetwork 4.2 or later with PostgreSQL 14.9 database, Python 3 (including `python-dev`).
+
+### Python
+
+The Python package `psycopg2` requires the system package `libpq-dev` to be installed.
+**Installed with apt or the package manager of your system**
+
+```
+    sudo apt-get install libpq-dev
+```
 
 # INSTALLATION
-
-**Requires Python 3.12**
 
 ```
   git clone https://github.com/AstunTechnology/geonetwork-update-scripts
   cd geonetwork-update-scripts
-  python virtualenv .
+  python3 -m venv .
   source bin/activate
   pip install -r requirements.txt
-  ```
+```
 
 # GENERAL USAGE
 
 ## url_check.py
 
-Module for checking URLs (eg from online resource locators in a metadata record) and listing those that fail
+Module for checking URLs (eg from online resource locators in a metadata record) and listing those that fail.
 
-`python url_check.py --csvfile={csvfile}`
+`python url_check.py --csvfile /path/to/csv/file`
 
-Provide path to `{csvfile}` at prompt, which should comprise a single column with no header listing URLs (not specifically geonetwork
+Provide path to the CSV file at prompt, which should comprise of 2 columns, with the headers: **uuid** and **url** (not specifically GeoNetwork URLs).
 
-Outputs results to 404s.csv- a list of failing URLs and their error code
+Output results to `report.csv`- a list of the UUIDs, URLs and their error (or success) code. This is placed in the `output` directory.
+
+A sample file is provided in the `samples` directory which can be used to test the script.
+
+
+
+**######## TO BE REVISED (Don't read below here)########**
 
 # Tests
 
@@ -48,27 +62,11 @@ Requirements:
 
 > Send emails when metadata is due for an update or overdue an update, based on the supplied update frequency, date updated, and point of contact
 
-## Dependencies
-
-* GeoNetwork 4.2 or later with PostgreSQL 14.9 database
-
-### Python
-
-* The Python package `psycopg2` requires the system packages `python-dev` and `libpq-dev` be installed.
-
 ## Setup
 
 ### Database
 
 Once the dependencies are installed run `setup.sql` against the GeoNetwork database.
-
-### Python
-
-Create a Python 3.12 virtual environment and install dependencies using:
-
-    pip install -r requirements.txt
-
-
 ### Logging
 
 All log messages are written to `stdout`, should output be written to a file a sample logrotate configuration is provided (`updatereminder.logrotate`) which should be copied to `/etc/logrotate.d/`.
