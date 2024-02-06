@@ -51,7 +51,7 @@ def send_email(email_body, email_to, sys_settings):
     email_from = sys_settings.get('system/feedback/email')
     # temp address for testing emails
     # comment this out when not testing
-    # email_to = "miroslav.sihelsky@harlow.gov.uk"
+    email_to = ""
 
 
 
@@ -132,7 +132,7 @@ def main(config, base_dir, args):
     with conn:
         sys_settings = get_sys_settings(conn, os.path.join(base_dir, 'settings.sql'))
         if args.get('settings'):
-            print json.dumps(sys_settings, indent=4)
+            print (json.dumps(sys_settings, indent=4))
             return 0
 
     # Remind users with overdue metadata
