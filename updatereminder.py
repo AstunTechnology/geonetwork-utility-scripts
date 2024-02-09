@@ -51,7 +51,7 @@ def send_email(email_body, email_to, sys_settings):
     email_from = sys_settings.get('system/feedback/email')
     # temp address for testing emails
     # comment this out when not testing
-    email_to = ""
+    # email_to = "to@example.com"
 
 
 
@@ -76,7 +76,7 @@ def get_users_with_overdue_metadata(conn, base_dir):
             log.info('Checking for users with overdue metadata.')
             cur.execute(due_sql)
             log.debug('Executed records_overdue.sql:\n%s\n%s' % (cur.query, cur.statusmessage))
-            log.info('Found %s users with overdue metadata.' % cur.rowcount)
+            log.info('Found %s overdue metadata records.' % cur.rowcount)
             users = cur.fetchall()
     return users
 
@@ -93,7 +93,7 @@ def get_users_with_due_metadata(conn, base_dir):
             log.info('Checking for users with due metadata.')
             cur.execute(due_sql)
             log.debug('Executed records_due.sql:\n%s\n%s' % (cur.query, cur.statusmessage))
-            log.info('Found %s users with due metadata.' % cur.rowcount)
+            log.info('Found %s due metadata records.' % cur.rowcount)
             users = cur.fetchall()
 
     return users

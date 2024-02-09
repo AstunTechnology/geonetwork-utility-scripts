@@ -71,28 +71,38 @@ When ran, the scripts will prompt for the following:
 
 The logs will be appended to `email-update.log`.
 
-**######## TO BE REVISED (Don't read below here)########**
+## Metadata Update Reminder
 
-# Metadata Update Reminder
+See https://astuntech.atlassian.net/wiki/spaces/SYSADMIN/pages/140763762/Metadata+Update+Frequency+Queries for more details on the process and methodology.
 
-See https://astuntech.atlassian.net/wiki/spaces/SYSADMIN/pages/140763762/Metadata+Update+Frequency+Queries for more details
+This module can be used to send emails when metadata is due for an update or overdue an update, based on the record's update frequency, date updated, and point of contact.
 
-## Requirements
+When the script runs, it checks the database for due (using the `recordsdue.sql` query) or overdue (using the `recordsoverdue.sql` query) records and it sends an email to the Point of Contact for the metadata with the UUID, Title and a Direct URL for each record that needs updating. The email templates used are `records_due.tmpl` and `records_overdue.tmpl` respectively.
 
-> Send emails when metadata is due for an update or overdue an update, based on the supplied update frequency, date updated, and point of contact
+### Setup
 
-## Setup
+#### Database
 
-### Database
+Once the dependencies from the `requirements.txt` are installed run `setup.sql` against the GeoNetwork database.
 
-Once the dependencies are installed run `setup.sql` against the GeoNetwork database.
+```
+psql -h localhost -p 5432 -d geonetwork -U geonetwork -a -f setup.sql
+```
 
-### Logging
+#### Logging
 
-All log messages are written to `stdout`, should output be written to a file a sample logrotate configuration is provided (`updatereminder.logrotate`) which should be copied to `/etc/logrotate.d/`.
+All log messages are written to `stdout`, should you wish the output be written to a file, a sample logrotate configuration is provided (`updatereminder.logrotate`) which should be copied to `/etc/logrotate.d/`.
 
-## Usage
+### Usage
 
-For usage run `updatereminder.py` using the `python` interpreter from the virtual environment:
+This module requires a full path to `jdbc.properties` to run:
 
-`python updatereminder.py --help`
+```
+python updatereminder.py /full/path/to/jdbc.properties
+```
+
+For further usage instructions run `updatereminder.py` using the `python` interpreter from the virtual environment:
+
+```
+python updatereminder.py --help
+```
