@@ -5,7 +5,7 @@ chardet==3.0.4
 charset==1.0.1
 Click==7.0
 emaildata==0.3.4
-idna==2.8
+idna==3.7
 numpy==1.22.0
 pandas==0.24.2
 pkg-resources==0.0.0
